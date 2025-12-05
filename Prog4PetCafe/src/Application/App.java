@@ -1,6 +1,11 @@
+package Application;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+//import Requests.*;
 
 /*=============================================================================
  |   Assignment:  Program #4:  Database Design and Implementation
@@ -24,11 +29,6 @@ import java.util.Scanner;
  |                
  | Deficiencies:  Just starting out, too early.
  *===========================================================================*/
-
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-
 public class App {
 
 	final static String oracleURL = "jdbc:oracle:thin:@aloe.cs.arizona.edu:1521:oracle";
@@ -147,6 +147,49 @@ public class App {
     *-------------------------------------------------------------------*/
 	private static void editDataHandler(Connection dbconn, Scanner scanner) {
 
+		String answer = null;
+
+		System.out.println("Which type of data do you want to edit?:");
+		System.out.println("\t(a) Members");
+		System.out.println("\t(b) Animals and Pets");
+		System.out.println("\t(c) Food and Beverage Orders");
+		System.out.println("\t(d) Reservations");	
+		System.out.println("\t(e) Health Records");	
+		System.out.println("\t(f) Adoption Applications");
+		System.out.println("\t(g) Event Bookings");		
+		System.out.println("\tEnter 'q' to go back");
+
+		answer = scanner.next();
+
+		switch (answer) {
+			case "a":
+				
+				break;
+			case "b":
+
+				break;
+			case "c":
+				
+				break;
+			case "d":
+				
+				break;
+			case "e":
+
+				break;
+			case "f":
+
+				break;
+			case "g":
+
+				break;
+			case "q":
+				return;
+			default:
+				System.out.println("Invalid response, please try again.");
+				break;
+		}
+		return;
 	}
 
 	/*---------------------------------------------------------------------
@@ -166,5 +209,40 @@ public class App {
     *-------------------------------------------------------------------*/
 	private static void queryHandler(Connection dbconn, Scanner scanner) {
 
+		String answer = null;
+
+		System.out.println("Which type of query would you like to see?:");
+		System.out.println("\t(a) List all adoption applications for a given pet");
+		System.out.println("\t(b) Show visit history of given customer");
+		System.out.println("\t(c) List all upcoming events with open capacity");
+		System.out.println("\t(d) Custom query");	
+		System.out.println("\t(e) Direct query");		
+		System.out.println("\tEnter 'q' to go back");
+
+		answer = scanner.next();
+
+		switch (answer) {
+			case "a":
+				
+				break;
+			case "b":
+
+				break;
+			case "c":
+				
+				break;
+			case "d":
+				
+				break;
+			case "e":
+
+				break;
+			case "q":
+				return;
+			default:
+				System.out.println("Invalid response, please try again.");
+				break;
+		}
+		return;
 	}
 }
