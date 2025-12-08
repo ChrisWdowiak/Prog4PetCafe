@@ -186,7 +186,8 @@ public class App {
 				return;
 			default:
 				System.out.println("Invalid response, please try again.");
-				break;
+				editDataHandler(dbconn, scanner);
+				return;
 		}
 		return;
 	}
@@ -240,7 +241,8 @@ public class App {
 				return;
 			default:
 				System.out.println("Invalid response, please try again.");
-				break;
+				queryHandler(dbconn, scanner);
+				return;
 		}
 		return;
 	}
