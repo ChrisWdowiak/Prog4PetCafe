@@ -1,4 +1,7 @@
-
+import java.util.Scanner;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 
 /*+----------------------------------------------------------------------
  ||
@@ -37,6 +40,90 @@
  ++-----------------------------------------------------------------------*/
 public class EditRequests {
     
+    /*---------------------------------------------------------------------
+    |  Method memberLanding
+    |
+    |  Purpose:  this method serves as the landing for an edit member request
+    |      so that it can call 3 helpers for update, delete, and add.
+    |
+	|  Pre-condition:  User requested to edit member and connection to oracle
+    |      establisted.
+    |
+    |  Post-condition: the users request will be handled and the member table will
+    |      be modified.
+    |
+    |  Parameters:
+    |      dbconn -- Our Oracle connection object.
+	|	   scanner -- just a scanner object so we dont create new ones.
+    |
+    |  Returns:  None
+    *-------------------------------------------------------------------*/
+    public static void memberLanding(Connection dbconn, Scanner scanner) {
+
+        String answer = null;
+
+		System.out.println("Would you like to update, delete, or add?:");
+		System.out.println("\t(a) Update");
+		System.out.println("\t(b) Delete");
+		System.out.println("\t(c) Add");
+        System.out.println("\tEnter 'q' to go back");
+
+        answer = scanner.next();
+
+        switch (answer) {
+			case "a":
+				
+				break;
+			case "b":
+
+				break;
+			case "c":
+				
+				break;
+			
+			case "q":
+				return;
+			default:
+				System.out.println("Invalid response, please try again.");
+                memberLanding(dbconn, scanner);
+				return;
+		}
+		return;
+    }
+
+    /*---------------------------------------------------------------------
+    |  Method memberUpdate
+    |
+    |  Purpose:  handles update member in the table
+    |
+	|  Pre-condition:  user requested this and oracle connection established
+    |
+    |  Post-condition: request will be handled and tuple(s) in the member table
+    |      will be modified.
+    |
+    |  Parameters:
+    |      dbconn -- Our Oracle connection object.
+	|	   scanner -- just a scanner object so we dont create new ones.
+    |
+    |  Returns:  None.
+    *-------------------------------------------------------------------*/
+    public static void memberUpdate(Connection dbconn, Scanner scanner) {
+
+        String answer = null;
+
+		System.out.print("Enter the ID or name of the member you wish to update: ");
+        answer = scanner.next();
+        System.out.println();
+
+        // id case
+        if (answer.matches("\\d+")) {
+
+        } else {
+
+        }
+
+        
+    }
 
 
 }

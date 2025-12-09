@@ -35,7 +35,7 @@ public class App {
 
     // gonna assume it starts like program3
     // code to connect to Oracle
-    if (args.length != 2) {
+		if (args.length != 2) {
 			System.out.println("ERROR: invalid arguements");
 			System.exit(-1);
 		}
@@ -94,8 +94,6 @@ public class App {
     *-------------------------------------------------------------------*/
 	private static void queryLoop(Connection dbconn, Scanner scanner) {
 
-		String answer = null;
-
 		System.out.println("Enter the letter for which type of request you'd like:");
 		System.out.println("\t(a) Add, update, or delete from system");
 		System.out.println("\t(b) Enter query mode");
@@ -103,9 +101,11 @@ public class App {
 		System.out.println("\t(d) Additional functionality?");				
 		System.out.println("\tEnter 'q' to exit");
 
+		String answer = null;
 		answer = scanner.next();
 
-		switch (answer) {
+		while(answer.equals("q")) {
+			switch (answer) {
 			case "a":
 				editDataHandler(dbconn, scanner);
 				break;
@@ -124,9 +124,17 @@ public class App {
 			default:
 				System.out.println("Invalid response, please try again.");
 				break;
-		}
+			}
+			
+			System.out.println("Enter the letter for which type of request you'd like:");
+			System.out.println("\t(a) Add, update, or delete from system");
+			System.out.println("\t(b) Enter query mode");
+			System.out.println("\t(c) Additional functionality?");
+			System.out.println("\t(d) Additional functionality?");				
+			System.out.println("\tEnter 'q' to exit");
 
-		queryLoop(dbconn, scanner);
+			answer = scanner.next();
+		}
 	}
 
 	/*---------------------------------------------------------------------
