@@ -70,7 +70,7 @@ public class EditRequests {
 
         switch (answer) {
 			case "a":
-				
+				memberUpdate(dbconn, scanner);
 				break;
 			case "b":
 
@@ -115,9 +115,10 @@ public class EditRequests {
 
         if (answer.matches("\\d+")) {
             // id case 
+            int id = Integer.parseInt(answer);
 		    Statement stmt = null;
 		    ResultSet result = null;
-            String query = String.format("SELECT * FROM lucashamacher.Customer WHERE customerID=%d");
+            String query = String.format("SELECT * FROM lucashamacher.Customer WHERE customerID=%d", id);
             try {
 
             stmt = dbconn.createStatement();

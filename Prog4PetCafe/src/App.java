@@ -104,7 +104,7 @@ public class App {
 		String answer = null;
 		answer = scanner.next();
 
-		while(answer.equals("q")) {
+		while(!answer.equals("q")) {
 			switch (answer) {
 			case "a":
 				editDataHandler(dbconn, scanner);
@@ -170,7 +170,7 @@ public class App {
 
 		switch (answer) {
 			case "a":
-				
+				EditRequests.memberLanding(dbconn, scanner);
 				break;
 			case "b":
 
