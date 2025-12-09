@@ -1,7 +1,5 @@
 import java.util.Scanner;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.sql.*;
 
 /*+----------------------------------------------------------------------
  ||
@@ -115,14 +113,61 @@ public class EditRequests {
         answer = scanner.next();
         System.out.println();
 
-        // id case
         if (answer.matches("\\d+")) {
+            // id case 
+		    Statement stmt = null;
+		    ResultSet result = null;
+            String query = String.format("SELECT * FROM lucashamacher.Customer WHERE customerID=%d");
+            try {
+
+            stmt = dbconn.createStatement();
+            result = stmt.executeQuery(query);
+
+            if (answer != null) {
+
+                System.out.println("The current tuple is:");
+
+                ResultSetMetaData resultmetadata = result.getMetaData();
+
+                for (int i = 1; i <= resultmetadata.getColumnCount(); i++) {
+                    System.out.print(resultmetadata.getColumnName(i) + "\t");
+                }
+                System.out.println();
+
+                while (result.next()) {
+                    System.out.println(result.getInt("customerID") + "\t" + result.getString("name") + 
+                    "\t" + result.getString("phone") + "\t" + result.getString("email") + "\t" + 
+                    result.getDate("dateOfBirth") + "\t" + result.getString("emergencyContactName") +
+                    "\t" + result.getString("emergencyContactPhone") );
+                }
+            } else {
+               System.out.println("No member with that ID exists"); 
+            }
+            System.out.println();
+
+                // Shut down the connection to the DBMS.
+
+            stmt.close();  
+            dbconn.close();
+
+            } catch (SQLException e) {
+
+                System.err.println("*** SQLException:  "
+                    + "Could not fetch query results.");
+                System.err.println("\tMessage:   " + e.getMessage());
+                System.err.println("\tSQLState:  " + e.getSQLState());
+                System.err.println("\tErrorCode: " + e.getErrorCode());
+                System.exit(-1);
+
+            }
 
         } else {
+            // name case
+
 
         }
 
-        
+
     }
 
 
