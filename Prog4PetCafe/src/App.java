@@ -173,22 +173,22 @@ public class App {
 				EditRequests.memberLanding(dbconn, scanner);
 				break;
 			case "b":
-
+				EditRequests.petLanding(dbconn, scanner);
 				break;
 			case "c":
-				
+				EditRequests.orderLanding(dbconn, scanner);
 				break;
 			case "d":
-				
+				EditRequests.reservationLanding(dbconn, scanner);
 				break;
 			case "e":
-
+				EditRequests.healthLanding(dbconn, scanner);
 				break;
 			case "f":
-
+				EditRequests.adoptionLanding(dbconn, scanner);
 				break;
 			case "g":
-
+				EditRequests.eventLanding(dbconn, scanner);
 				break;
 			case "q":
 				return;

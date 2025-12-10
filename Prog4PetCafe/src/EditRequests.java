@@ -634,7 +634,7 @@ public class EditRequests {
         
          if (!answer.matches("\\d+")) {
             return;
-         }
+        }
 
         if (ids.contains(Integer.parseInt(answer))) {
             int id =Integer.parseInt(answer);
@@ -875,7 +875,54 @@ public class EditRequests {
         }
 
         if (ids.contains(Integer.parseInt(answer))) {
-            // TODO
+            int id = Integer.parseInt(answer);
+		    stmt = null;
+		    result = null;
+            query = String.format("SELECT * FROM lucashamacher.CustomerMembership WHERE customerID=%d", id);
+            try {
+
+            stmt = dbconn.createStatement();
+            result = stmt.executeQuery(query);
+
+            if (result != null) {
+                
+                if (result.next()) {
+                    System.out.println("The current membership relationship is:");
+                    System.out.println(result.getInt(1) + "\t" + result.getInt(2) + 
+                    "\t" + result.getInt(3) + "\t" + result.getDate(4) + "\t" + 
+                    result.getDate(5) );
+                    System.out.println();
+
+                    modifyMemberShip(dbconn, scanner, id);
+                    stmt.close();
+                } else {
+                    System.out.print("This member does not have a membership, do you wish to add one (y/n)?: ");
+                    answer = scanner.next();
+                    if (answer.equals("y")) {
+                        addMembership(dbconn, scanner, id);
+                    }
+                    stmt.close();
+                    return;
+                }
+            } else {
+                stmt.close();  
+                return;
+            }
+            System.out.println();
+
+            stmt.close();  
+
+            } catch (SQLException e) {
+
+                System.err.println("*** SQLException:  "
+                    + "Could not fetch query results.");
+                System.err.println("\tMessage:   " + e.getMessage());
+                System.err.println("\tSQLState:  " + e.getSQLState());
+                System.err.println("\tErrorCode: " + e.getErrorCode());
+                System.exit(-1);
+
+            }
+            return;
         }
         return;
     }
@@ -989,8 +1036,6 @@ public class EditRequests {
         }
 
         String addQ = String.format("UPDATE lucashamacher.CustomerMembership SET membershipID='%s', startDate=TO_DATE('%s-%s-%s', 'YYYY-MM-DD'), endDate=TO_DATE('%s-%s-%s', 'YYYY-MM-DD') WHERE customerID=%d", membershipFK,year, month, day,yearEnd,monthEnd,day,id);        
-        //String addQ = "UPDATE lucashamacher.CustomerMembership SET membershipID='" + membershipFK + "', startDate='" ;
-        //addQ += year+"/"+month+"/"+day+"', endDate='"+yearEnd+"/"+monthEnd+"/"+day+"' WHERE customerID=" + id;
         try {
 
             Statement addStmt = dbconn.createStatement();
@@ -1183,6 +1228,30 @@ public class EditRequests {
         System.out.println();
         return;
         
+    }
+
+    public static void petLanding(Connection dbconn, Scanner scanner) {
+
+    }
+    
+    public static void orderLanding(Connection dbconn, Scanner scanner) {
+
+    }
+
+    public static void reservationLanding(Connection dbconn, Scanner scanner) {
+
+    }
+
+    public static void healthLanding(Connection dbconn, Scanner scanner) {
+
+    }
+
+    public static void adoptionLanding(Connection dbconn, Scanner scanner) {
+
+    }
+
+    public static void eventLanding(Connection dbconn, Scanner scanner) {
+
     }
 
 }
