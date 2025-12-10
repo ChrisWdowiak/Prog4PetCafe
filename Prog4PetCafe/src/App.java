@@ -223,27 +223,23 @@ public class App {
 		System.out.println("\t(a) List all adoption applications for a given pet");
 		System.out.println("\t(b) Show visit history of given customer");
 		System.out.println("\t(c) List all upcoming events with open capacity");
-		System.out.println("\t(d) Custom query");	
-		System.out.println("\t(e) Direct query");		
+		System.out.println("\t(d) Custom query: Pet's Health Records");			
 		System.out.println("\tEnter 'q' to go back");
 
 		answer = scanner.next();
 
 		switch (answer) {
 			case "a":
-				
+				QueryRequests.listAdoptionApplications(dbconn, scanner);
 				break;
 			case "b":
-
+				QueryRequests.showVisitHistory(dbconn, scanner);
 				break;
 			case "c":
-				
+				QueryRequests.listAllUpcomingEvents(dbconn);
 				break;
 			case "d":
-				
-				break;
-			case "e":
-
+				QueryRequests.showPetHealthRecord(dbconn, scanner);
 				break;
 			case "q":
 				return;
