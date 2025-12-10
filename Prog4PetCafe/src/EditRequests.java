@@ -1,6 +1,8 @@
 import java.util.Scanner;
 import java.util.ArrayList;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.time.format.DateTimeFormatter;
 import java.sql.*;
 
@@ -2051,14 +2053,206 @@ public class EditRequests {
 		}
 		return;
     }
-
+    /*---------------------------------------------------------------------
+    |  Method orderUpdate
+    |
+    |  Purpose:  handles update orders in the table
+    |
+	|  Pre-condition:  user requested this and oracle connection established
+    |
+    |  Post-condition: request will be handled and tuple(s) in the order table
+    |      will be modified.
+    |
+    |  Parameters:
+    |      dbconn -- Our Oracle connection object.
+	|	   scanner -- just a scanner object so we dont create new ones.
+    |
+    |  Returns:  None.
+    *-------------------------------------------------------------------*/
     private static void orderUpdate(Connection dbconn, Scanner scanner) {
-        // TODO
+        String answer = null;
+        System.out.print("Which order are you paying?: ");
+        String orderID =scanner.next();
+        int paymentID = addPayment(dbconn, Integer.parseInt(orderID));
+
+        Statement stmt = null;
+        ResultSet result = null;
+        String query = String.format("UPDATE lucashamacher.OrderItem set paymentID='%d' where orderId=%d", paymentID, Integer.parseInt(orderID));
+
+        try {
+
+        stmt = dbconn.createStatement();
+        stmt.executeQuery(query);
+        stmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        System.out.println("-----Successfully payed for order-----");
+
     }
 
-    private static void orderDelete(Connection dbconn, Scanner scanner) {
-        // TODO
+    private static int addPayment(Connection dbconn, int orderID) {
+
+        int amount = 0;
+        Statement stmt = null;
+        ResultSet result = null;
+        String query = String.format(
+            "SELECT MI.price * OI.quantity " +
+            "FROM lucashamacher.MenuItem MI " +
+            "JOIN lucashamacher.OrderItem OI ON MI.menuItemID = OI.menuItemID " +
+            "WHERE OI.orderID = %d",
+            orderID
+        );
+        
+        try {
+            stmt = dbconn.createStatement();
+            result = stmt.executeQuery(query);
+            
+            if (result != null) {
+
+                while (result.next()) {
+                    amount = result.getInt(1);
+                }
+                
+            stmt.close();  
+            }
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+
+        // need to get a valid id
+        int id;
+        int idMin = 0;
+        int idMax = 0;
+        stmt = null;
+        result = null;
+        query = String.format("SELECT min(paymentID), max(paymentID) FROM lucashamacher.Payment");
+        try {
+
+        stmt = dbconn.createStatement();
+        result = stmt.executeQuery(query);
+
+        if (result != null) {
+
+            while (result.next()) {
+                idMin = result.getInt(1);
+                idMax = result.getInt(2);
+            }
+        } else {
+            idMin = 0;
+            idMax = 0;
+            stmt.close();  
+        }
+        System.out.println();
+
+        stmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        if (idMin > 0) {
+            id = idMin -1;
+        } else {
+            id = idMax + 1;
+        }
+
+        float total = amount;
+        LocalDate today = LocalDate.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String formattedDate = today.format(formatter);
+        String year = formattedDate.substring(0,4);
+        String month = formattedDate.substring(5,7);
+        String day = formattedDate.substring(8,10);
+        stmt = null;
+        query = String.format("INSERT INTO lucashamacher.Payment values ( %d, %f, TO_DATE('%s-%s-%s', 'YYYY-MM-DD'), '' )", id, total, year, month, day);
+        try {
+
+        stmt = dbconn.createStatement();
+        stmt.executeQuery(query);
+
+        stmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+
+        return id;
     }
+
+    /*---------------------------------------------------------------------
+    |  Method orderAdd
+    |
+    |  Purpose:  handles deleting a order in the table
+    |
+	|  Pre-condition:  user requested this and oracle connection established
+    |
+    |  Post-condition: request will be handled and tuple(s) in the order tables
+    |      will be added.
+    |
+    |  Parameters:
+    |      dbconn -- Our Oracle connection object.
+	|	   scanner -- just a scanner object so we dont create new ones.
+    |
+    |  Returns:  None.
+    *-------------------------------------------------------------------*/
+    private static void orderDelete(Connection dbconn, Scanner scanner) {
+
+        System.out.print("Enter order num to delete: ");
+        String answer = scanner.next();
+
+
+        Statement stmt = null;
+        ResultSet result = null;
+        String query = String.format("Delete from lucashamacher.OrderItem where orderItemId=%s", answer);
+        
+        try {
+            stmt = dbconn.createStatement();
+            stmt.executeQuery(query);
+ 
+            stmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        System.out.println("-----Successfully deleted order-----");
+    }   
 
     /*---------------------------------------------------------------------
     |  Method orderAdd
@@ -2163,7 +2357,7 @@ public class EditRequests {
                 answer =scanner.next();
             }
             if (answer.equals("n")) {
-                orderID = -1;
+                orderID = addBlankReservationOrder(dbconn);
             } else {
                 orderID = findOrderFromReserve(dbconn, scanner);
                 if (orderID == -1) {
@@ -2228,8 +2422,100 @@ public class EditRequests {
            // no customer
             return -1;
         }
+        int reserveID = reservationFromCust(dbconn, custId);
+        if (reserveID == -1) {
+            // no reservation
+            return -1;
+        }
+        if (!hasReservationOrder(dbconn, reserveID)) {
+            addReservationOrder(dbconn, reserveID);
+        }
 
-        return -1;
+        int orderID = -1;
+        Statement stmt = null;
+        ResultSet result = null;
+        String query = "SELECT orderID name FROM lucashamacher.ReservationOrder WHERE reservationID=" + reserveID;
+        
+        try {
+            stmt = dbconn.createStatement();
+            result = stmt.executeQuery(query);
+
+            if (result != null) {
+                while (result.next()) {
+                    orderID = result.getInt(1);
+                
+                }
+            } else {
+                stmt.close();  
+                return -1;
+            }
+
+            stmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+
+        return orderID;
+    }
+
+    /*---------------------------------------------------------------------
+    |  Method reserveIdFromCust
+    |
+    |  Purpose:  this method finds a reservation id from a given custID
+    |
+	|  Pre-condition:  we need to determine a reserver id
+    |
+    |  Post-condition: the users will help us determine which one
+    |
+    |  Parameters:
+    |      dbconn -- Our Oracle connection object.
+	|	   scanner -- just a scanner object so we dont create new ones.
+    |      custID -- fk in our fk pk pair
+    |
+    |  Returns:  int of the reservationID
+    *-------------------------------------------------------------------*/
+    private static int reservationFromCust(Connection dbconn, int custID) {
+        int reservationID = -1;
+        Statement stmt = null;
+        ResultSet result = null;
+        String query = "SELECT reservationID name FROM lucashamacher.Reservation WHERE customerID=" + custID;
+
+        try {
+            stmt = dbconn.createStatement();
+            result = stmt.executeQuery(query);
+
+            if (result != null) {
+                while (result.next()) {
+                    reservationID = result.getInt(1);
+                
+                }
+            } else {
+                stmt.close();  
+                return -1;
+            }
+
+            stmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+
+        return reservationID;
     }
 
     /*---------------------------------------------------------------------
@@ -2307,6 +2593,58 @@ public class EditRequests {
     }
 
     /*---------------------------------------------------------------------
+    |  Method hasReservationOrder
+    |
+    |  Purpose:  this method checks if a reservation has a reservation order
+    |
+	|  Pre-condition:  the reservation exists
+    |
+    |  Post-condition: the users request will be handled and the reservation table will
+    |      be modified.
+    |
+    |  Parameters:
+    |      dbconn -- Our Oracle connection object.
+    |
+    |  Returns:  the orderID
+    *-------------------------------------------------------------------*/
+    public static boolean hasReservationOrder(Connection dbconn, int reservationID) {
+        
+        
+        Statement stmt = null;
+        ResultSet result = null;
+        /* 
+        could not figure this shit out
+        LocalDateTime ldt = LocalDateTime.now();
+        Timestamp ts = Timestamp.valueOf(ldt);
+        */
+        String query = String.format("Select reservationID from lucashamacher.ReservationOrder WHERE reservationID=%d", reservationID);
+        boolean found = false;
+        try {
+
+        //System.out.println(query);
+        stmt = dbconn.createStatement();
+        result = stmt.executeQuery(query);
+
+        if (result.next()) {
+            found = true;
+        }
+
+        stmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        return found;
+    }
+
+    /*---------------------------------------------------------------------
     |  Method reservationLanding
     |
     |  Purpose:  this method updates the reservationorder table specifically
@@ -2337,9 +2675,11 @@ public class EditRequests {
             result = stmt.executeQuery(query);
 
             if (result != null) {
+
                 while (result.next()) {
                     priceAdd = result.getInt(1) * quantity;
                 }
+                
             stmt.close();  
             }
 
@@ -2393,6 +2733,186 @@ public class EditRequests {
             System.exit(-1);
         }
         return;
+    }
+    
+    /*---------------------------------------------------------------------
+    |  Method addBlankReservationOrder
+    |
+    |  Purpose:  this method adds a reservation order for non reservation orders
+    |
+	|  Pre-condition:  the order does not have a reservation associated
+    |
+    |  Post-condition: the users request will be handled and the reservation table will
+    |      be modified.
+    |
+    |  Parameters:
+    |      dbconn -- Our Oracle connection object.
+    |
+    |  Returns:  the orderID
+    *-------------------------------------------------------------------*/
+    public static int addBlankReservationOrder(Connection dbconn) {
+        
+        // need to get a valid id
+        int id;
+        int idMin = 0;
+        int idMax = 0;
+        Statement stmt = null;
+        ResultSet result = null;
+        String query = String.format("SELECT min(orderID), max(orderID) FROM lucashamacher.ReservationOrder");
+        try {
+
+        stmt = dbconn.createStatement();
+        result = stmt.executeQuery(query);
+
+        if (result != null) {
+
+            while (result.next()) {
+                idMin = result.getInt(1);
+                idMax = result.getInt(2);
+            }
+        } else {
+            idMin = 0;
+            idMax = 0;
+            stmt.close();  
+        }
+        System.out.println();
+
+        stmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        if (idMin > 0) {
+            id = idMin -1;
+        } else {
+            id = idMax + 1;
+        } 
+        
+        stmt = null;
+        result = null;
+        /* 
+        could not figure this shit out
+        LocalDateTime ldt = LocalDateTime.now();
+        Timestamp ts = Timestamp.valueOf(ldt);
+        */
+        query = String.format("Insert Into lucashamacher.ReservationOrder values ('%d', '0', '', '0')", id);
+        try {
+
+        //System.out.println(query);
+        stmt = dbconn.createStatement();
+        stmt.executeQuery(query);
+
+
+        stmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        return id;
+    }
+
+    /*---------------------------------------------------------------------
+    |  Method addReservationOrder
+    |
+    |  Purpose:  this method adds a reservation order for non reservation orders
+    |
+	|  Pre-condition:  the order does not have a reservation associated
+    |
+    |  Post-condition: the users request will be handled and the reservation table will
+    |      be modified.
+    |
+    |  Parameters:
+    |      dbconn -- Our Oracle connection object.
+    |
+    |  Returns:  the orderID
+    *-------------------------------------------------------------------*/
+    public static int addReservationOrder(Connection dbconn, int reservationID) {
+        
+        // need to get a valid id
+        int id;
+        int idMin = 0;
+        int idMax = 0;
+        Statement stmt = null;
+        ResultSet result = null;
+        String query = String.format("SELECT min(orderID), max(orderID) FROM lucashamacher.ReservationOrder");
+        try {
+
+        stmt = dbconn.createStatement();
+        result = stmt.executeQuery(query);
+
+        if (result != null) {
+
+            while (result.next()) {
+                idMin = result.getInt(1);
+                idMax = result.getInt(2);
+            }
+        } else {
+            idMin = 0;
+            idMax = 0;
+            stmt.close();  
+        }
+        System.out.println();
+
+        stmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        if (idMin > 0) {
+            id = idMin -1;
+        } else {
+            id = idMax + 1;
+        } 
+        
+        stmt = null;
+        result = null;
+        /* 
+        could not figure this shit out
+        LocalDateTime ldt = LocalDateTime.now();
+        Timestamp ts = Timestamp.valueOf(ldt);
+        */
+        query = String.format("Insert Into lucashamacher.ReservationOrder values ('%d', '%d', '', '0')", id,reservationID);
+        try {
+
+        //System.out.println(query);
+        stmt = dbconn.createStatement();
+        stmt.executeQuery(query);
+
+
+        stmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        return id;
     }
 
     /*---------------------------------------------------------------------
