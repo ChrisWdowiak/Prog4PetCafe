@@ -1,4 +1,5 @@
 import java.util.Scanner;
+import java.util.ArrayList;
 import java.sql.*;
 
 /*+----------------------------------------------------------------------
@@ -124,7 +125,7 @@ public class EditRequests {
             stmt = dbconn.createStatement();
             result = stmt.executeQuery(query);
 
-            if (answer != null) {
+            if (result != null) {
 
                 System.out.println("The current tuple is:");
 
@@ -143,13 +144,13 @@ public class EditRequests {
                 }
             } else {
                System.out.println("No member with that ID exists"); 
+                stmt.close();  
+                dbconn.close();
+                return;
             }
             System.out.println();
 
-                // Shut down the connection to the DBMS.
-
             stmt.close();  
-            dbconn.close();
 
             } catch (SQLException e) {
 
@@ -162,10 +163,185 @@ public class EditRequests {
 
             }
 
+            String name = null;
+            String nameLast = null;
+            String phone = null;
+            String email = null;
+            String dobDay = null;
+            String dobMon = null;
+            String dobY = null;
+            String emergencyName = null;
+            String emergencyLast = null;
+            String emergencyPhone = null;
+            
+            answer="n";
+            while (answer.contains("n")) {
+
+                System.out.println("Please give new info");
+                System.out.print("Enter name: ");
+                name = scanner.next();
+                nameLast = scanner.next();
+                System.out.print("Enter phone: ");
+                phone = scanner.next();
+                System.out.print("Enter email: ");
+                email = scanner.next();
+                System.out.print("Enter date of birth, Day: ");
+                dobDay = scanner.next();
+                System.out.print("\tMonth: ");
+                dobMon = scanner.next();
+                System.out.print("\tYear: ");
+                dobY = scanner.next();
+                System.out.print("Enter emergency contact name: ");
+                emergencyName = scanner.next();
+                emergencyLast = scanner.next();
+                System.out.print("Enter emergency contact phone#: ");
+                emergencyPhone = scanner.next();
+                System.out.println();
+
+                System.out.println("Is this correct y or n?");
+                System.out.println(String.format("%s %s, %s, %s, %s/%s/%s, %s %s, %s", name, nameLast, phone, email, dobY, dobMon, dobDay, emergencyName, emergencyLast, emergencyPhone));
+                answer = scanner.next();
+            }
+
+            // execute sql statement
+            String update = String.format("UPDATE lucashamacher.Customer SET name='%s %s', phone='%s', email='%s', dateOfBirth='%s/%s/%s', emergencyContactName='%s %s', emergencyContactPhone='%s' WHERE customerID=%d", name,nameLast,phone,email,dobY,dobMon,dobDay,emergencyName,emergencyLast,emergencyPhone, id);
+            //System.out.println(update);
+            try {
+
+                Statement upStmt = dbconn.createStatement();
+                result = upStmt.executeQuery(update);
+                upStmt.close();
+
+            } catch (SQLException e) {
+
+                System.err.println("*** SQLException:  "
+                    + "Could not fetch query results.");
+                System.err.println("\tMessage:   " + e.getMessage());
+                System.err.println("\tSQLState:  " + e.getSQLState());
+                System.err.println("\tErrorCode: " + e.getErrorCode());
+                System.exit(-1);
+
+            }
+            System.out.println("-----Successfully updated member------");
+            return;
+
         } else {
             // name case
+		    Statement stmt = null;
+		    ResultSet result = null;
+            String query = String.format("SELECT customerID, name FROM lucashamacher.Customer WHERE name LIKE '%%s%'", answer);
+            ArrayList<Integer> ids = new ArrayList<Integer>();
+            try {
+            stmt = dbconn.createStatement();
+            result = stmt.executeQuery(query);
 
+            if (result != null) {
 
+                System.out.println("Results of name search are:");
+
+                ResultSetMetaData resultmetadata = result.getMetaData();
+
+                for (int i = 1; i <= resultmetadata.getColumnCount(); i++) {
+                    System.out.print(resultmetadata.getColumnName(i) + "\t");
+                }
+                System.out.println();
+
+                while (result.next()) {
+                    ids.add(result.getInt("customerID"));
+                    System.out.println(result.getInt("customerID") + "\t" + result.getString("name"));
+                }
+            } else {
+               System.out.println("No member with that name exists"); 
+                stmt.close();  
+                dbconn.close();
+                return;
+            }
+            System.out.println();
+
+            stmt.close();  
+
+            } catch (SQLException e) {
+
+                System.err.println("*** SQLException:  "
+                    + "Could not fetch query results.");
+                System.err.println("\tMessage:   " + e.getMessage());
+                System.err.println("\tSQLState:  " + e.getSQLState());
+                System.err.println("\tErrorCode: " + e.getErrorCode());
+                System.exit(-1);
+
+            }
+
+            System.out.print("Please pick an ID# from the list or enter 'q' to go back: ");
+            answer = scanner.next();
+            while (!answer.contains("q")) {
+                if (ids.contains(Integer.parseInt(answer))) {
+                    int id = Integer.parseInt(answer);
+                    
+                    String name = null;
+                    String nameLast = null;
+                    String phone = null;
+                    String email = null;
+                    String dobDay = null;
+                    String dobMon = null;
+                    String dobY = null;
+                    String emergencyName = null;
+                    String emergencyLast = null;
+                    String emergencyPhone = null;
+                    
+                    answer="n";
+                    while (answer.contains("n")) {
+
+                        System.out.println("Please give new info");
+                        System.out.print("Enter name: ");
+                        name = scanner.next();
+                        nameLast = scanner.next();
+                        System.out.print("Enter phone: ");
+                        phone = scanner.next();
+                        System.out.print("Enter email: ");
+                        email = scanner.next();
+                        System.out.print("Enter date of birth, Day: ");
+                        dobDay = scanner.next();
+                        System.out.print("\tMonth: ");
+                        dobMon = scanner.next();
+                        System.out.print("\tYear: ");
+                        dobY = scanner.next();
+                        System.out.print("Enter emergency contact name: ");
+                        emergencyName = scanner.next();
+                        emergencyLast = scanner.next();
+                        System.out.print("Enter emergency contact phone#: ");
+                        emergencyPhone = scanner.next();
+                        System.out.println();
+
+                        System.out.println("Is this correct y or n?");
+                        System.out.println(String.format("%s %s, %s, %s, %s/%s/%s, %s %s, %s", name, nameLast, phone, email, dobY, dobMon, dobDay, emergencyName, emergencyLast, emergencyPhone));
+                        answer = scanner.next();
+                    }
+                     String update = String.format("UPDATE lucashamacher.Customer SET name='%s %s', phone='%s', email='%s', dateOfBirth='%s/%s/%s', emergencyContactName='%s %s', emergencyContactPhone='%s' WHERE customerID=%d", name,nameLast,phone,email,dobY,dobMon,dobDay,emergencyName,emergencyLast,emergencyPhone, id);
+                    //System.out.println(update);
+                    try {
+
+                        Statement upStmt = dbconn.createStatement();
+                        result = upStmt.executeQuery(update);
+                        upStmt.close();
+
+                    } catch (SQLException e) {
+
+                        System.err.println("*** SQLException:  "
+                            + "Could not fetch query results.");
+                        System.err.println("\tMessage:   " + e.getMessage());
+                        System.err.println("\tSQLState:  " + e.getSQLState());
+                        System.err.println("\tErrorCode: " + e.getErrorCode());
+                        System.exit(-1);
+
+                    }
+                    System.out.println("-----Successfully updated member------");
+                    return;
+                }
+
+                System.out.print("Please pick an ID# from the list or enter 'q' to go back: ");
+                answer = scanner.next();
+            }
+            
         }
 
 
