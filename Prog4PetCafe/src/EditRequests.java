@@ -3000,7 +3000,220 @@ public class EditRequests {
     |  Returns:  None
     *-------------------------------------------------------------------*/
     public static void eventLanding(Connection dbconn, Scanner scanner) {
+        String answer = null;
+
+		System.out.println("Would you like to update, delete, or add?:");
+		System.out.println("\t(a) Update");
+		System.out.println("\t(b) Delete");
+		System.out.println("\t(c) Add");
+        System.out.println("\tEnter 'q' to go back");
+
+        answer = scanner.next();
+
+        switch (answer) {
+			case "a":
+                eventUpdate(dbconn, scanner);
+				break;
+			case "b":
+                eventDelete(dbconn, scanner);
+				break;
+			case "c":
+                eventAdd(dbconn, scanner);
+				break;
+            case "d":
+                //eventRegister();
+                break;
+			case "q":
+				return;
+			default:
+				System.out.println("Invalid response, please try again.");
+                orderLanding(dbconn, scanner);
+				return;
+		}
+		return;
+    }
+
+    private static void eventUpdate (Connection dbconn, Scanner scanner) {
 
     }
 
+    private static void eventDelete (Connection dbconn, Scanner scanner) {
+
+    }
+
+    private static void eventAdd (Connection dbconn, Scanner scanner) {
+       
+        // need to get a valid id
+        int id;
+        int idMin = 0;
+        int idMax = 0;
+        Statement stmt = null;
+        ResultSet result = null;
+        String query = String.format("SELECT min(eventID), max(eventID) FROM lucashamacher.Event");
+        try {
+
+        stmt = dbconn.createStatement();
+        result = stmt.executeQuery(query);
+
+        if (result != null) {
+
+            while (result.next()) {
+                idMin = result.getInt(1);
+                idMax = result.getInt(2);
+            }
+        } else {
+            idMin = 0;
+            idMax = 0;
+            stmt.close();  
+        }
+        System.out.println();
+
+        stmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        if (idMin > 0) {
+            id = idMin -1;
+        } else {
+            id = idMax + 1;
+        }
+
+        String name = null;
+        String type = null;
+        String description = null;
+        String dobDay = null;
+        String dobMon = null;
+        String dobY = null;
+        String startTime = null;
+        String endTime = null;
+        String room;
+        String capacity = null;
+        String dateEv = null;
+        int roomID = 0;
+        
+        String answer="n";
+        while (answer.contains("n")) {
+
+            System.out.println("Please give new info");
+            System.out.print("Enter name: ");
+            name = scanner.next();
+            System.out.print("Enter type: ");
+            type = scanner.next();
+            System.out.print("Enter description: ");
+            description = scanner.next();
+            System.out.print("Enter date of event, Day: ");
+            dobDay = scanner.next();
+            System.out.print("\tMonth: ");
+            dobMon = scanner.next();
+            System.out.print("\tYear: ");
+            dobY = scanner.next();
+            System.out.print("Enter starttime: ");
+            endTime = scanner.next();
+            System.out.print("Enter endtime: ");
+            endTime = scanner.next();
+            System.out.println("Enter room name:");
+            answer = scanner.next();
+            roomID = roomNameToID(dbconn, scanner, answer);
+            System.out.print("Enter capacity: ");
+            capacity = scanner.next();
+            System.out.println();
+
+            dateEv = dobY+"-"+dobMon+"-"+dobDay;
+
+            System.out.println("Is this correct y or n?");
+            System.out.println(name+", "+type+", "+dobY+"-"+dobMon+"-"+dobDay+", "+startTime+", " + endTime + ", " +capacity);
+            answer = scanner.next();
+        }
+    
+        String add = String.format("INSERT INTO lucashamacher.Event VALUES ('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d')", id, name, type, description, dateEv, startTime, endTime, roomID, capacity);
+
+        try {
+
+            Statement addStmt = dbconn.createStatement();
+            addStmt.executeQuery(add);
+            addStmt.close();
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        System.out.println("-----Successfully added Event------");
+        System.out.println();
+        return;
+    }
+
+    private static int roomNameToID(Connection dbconn, Scanner scanner, String name) {
+        
+        int id = -1;
+        String answer = null;
+        Statement stmt = null;
+        ResultSet result = null;
+        String query = "SELECT roomID, roomName FROM lucashamacher.Room WHERE roomName LIKE '%"+name+"%'";
+        ArrayList<Integer> ids = new ArrayList<Integer>();
+        try {
+        stmt = dbconn.createStatement();
+        result = stmt.executeQuery(query);
+
+        if (result != null) {
+
+            System.out.println("Results of name search are:");
+
+            ResultSetMetaData resultmetadata = result.getMetaData();
+
+            for (int i = 1; i <= resultmetadata.getColumnCount(); i++) {
+                System.out.print(resultmetadata.getColumnName(i) + "\t");
+            }
+            System.out.println();
+
+            while (result.next()) {
+                ids.add(result.getInt("roomID"));
+                System.out.println(result.getInt("roomID") + "\t" + result.getString("roomName"));
+            }
+        } else {
+            System.out.println("No member with that name exists"); 
+            stmt.close();  
+            return -1;
+        }
+        System.out.println();
+
+        stmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+
+        System.out.print("Please pick an ID# from the list or enter 'q' to go back: ");
+        answer = scanner.next();
+        while (!answer.contains("q")) {
+            if (ids.contains(Integer.parseInt(answer))) {
+                id = Integer.parseInt(answer);
+    }
+    }
+        return id;
+    }
+
+    private static void eventRegister(Connection dbconn, Scanner scanner) {
+
+    }
 }
