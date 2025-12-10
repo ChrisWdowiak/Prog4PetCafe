@@ -3620,8 +3620,224 @@ public class EditRequests {
     |  Returns:  None
     *-------------------------------------------------------------------*/
     public static void adoptionLanding(Connection dbconn, Scanner scanner) {
+        String answer = null;
 
+		System.out.println("Would you like to update, delete, or add?:");
+		System.out.println("\t(a) Update");
+		System.out.println("\t(b) Delete");
+        System.out.println("\t(c) Add");
+        System.out.println("\tEnter 'q' to go back");
+
+        answer = scanner.next();
+
+        switch (answer) {
+			case "a":
+                adoptUpdate(dbconn, scanner);
+				break;
+			case "b":
+                adoptDelete(dbconn, scanner);
+				break;
+			case "c":
+                adoptAdd(dbconn, scanner);
+				break;
+            case "d":
+                break;
+			case "q":
+				return;
+			default:
+				System.out.println("Invalid response, please try again.");
+                adoptionLanding(dbconn, scanner);
+				return;
+		}
+		return;
     }
+
+    /*---------------------------------------------------------------------
+    |  Method [Method Name]
+    |
+    |  Purpose:  [Explain what this method does to support the correct
+    |      operation of its class, and how it does it.]
+    |
+	|  Pre-condition:  [Any non-obvious conditions that must exist
+    |      or be true before we can expect this method to function
+    |      correctly.]
+    |
+    |  Post-condition: [What we can expect to exist or be true after
+    |      this method has executed under the pre-condition(s).]
+    |
+    |  Parameters:
+    |      parameter_name -- [Explanation of the purpose of this
+    |          parameter to the method.  Write one explanation for each
+    |          formal parameter of this method.]
+    |
+    |  Returns:  [If this method sends back a value via the return
+    |      mechanism, describe the purpose of that value here, otherwise
+    |      state 'None.']
+    *-------------------------------------------------------------------*/
+   private static void adoptAdd(Connection dbconn, Scanner scanner) {
+        // need to get a valid id
+        int id;
+        int idMin = 0;
+        int idMax = 0;
+        Statement stmt = null;
+        ResultSet result = null;
+        String query = String.format("SELECT min(applicationID), max(applicationID) FROM lucashamacher.adoptionapplication");
+        try {
+
+        stmt = dbconn.createStatement();
+        result = stmt.executeQuery(query);
+
+        if (result != null) {
+
+            while (result.next()) {
+                idMin = result.getInt(1);
+                idMax = result.getInt(2);
+            }
+        } else {
+            idMin = 0;
+            idMax = 0;
+            stmt.close();  
+        }
+        System.out.println();
+
+        stmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        if (idMin > 0) {
+            id = idMin -1;
+        } else {
+            id = idMax + 1;
+        }
+
+        String answer = null;
+        System.out.print("Enter name of customer for application: ");
+        int custID = custIdFromName(dbconn, scanner, scanner.next());
+        if (custID == -1) {
+            return;
+        }
+        System.out.print("Enter name of pet for application: ");
+        int petID = petIdFromName(dbconn, scanner, scanner.next());
+        if (petID == -1) {
+            return;
+        }
+
+        // get todays date
+        LocalDate today = LocalDate.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String formattedDate = today.format(formatter);
+        String year = formattedDate.substring(0,4);
+        String month = formattedDate.substring(5,7);
+        String day = formattedDate.substring(8,10);
+        String dateEv = year+"-"+month+"-"+day;
+
+        String status = "pending";
+        String notes = null;
+
+        System.out.print("Enter coordinator ID for pet application: ");
+        int coordID = scanner.nextInt();
+
+        answer="n";
+        while (answer.contains("n")) {
+
+            scanner.nextLine();
+            System.out.println("Enter any notes: ");
+            notes = scanner.nextLine();
+
+
+            System.out.println("Is this correct y or n?");
+            System.out.println(custID+", "+petID+", "+dateEv+", "+coordID);
+            answer = scanner.next();
+        }
+    
+        String add = String.format("INSERT INTO lucashamacher.adoptionapplication VALUES (%d, '%d', '%d', TO_DATE('%s', 'YYYY-MM-DD'), '%s', '%s', %d)", id, custID, petID, dateEv, status, notes, coordID);
+
+        System.out.println(add);
+        try {
+
+            Statement addStmt = dbconn.createStatement();
+            addStmt.executeQuery(add);
+            addStmt.close();
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        System.out.println("-----Successfully added adoption application------");
+        System.out.println();
+        return;
+   }
+
+
+   private static void adoptUpdate(Connection dbconn, Scanner scanner) {
+        System.out.print("Enter application ID: ");
+        int id = scanner.nextInt();
+
+        String newStatus = null;
+        System.out.print("Enter new application status: ");
+        newStatus = scanner.next();
+
+        String query = String.format("Update lucashamacher.adoptionapplication set status='%s where applicationID=%d", newStatus, id);
+        try {
+
+            Statement addStmt = dbconn.createStatement();
+            addStmt.executeQuery(query);
+            addStmt.close();
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        System.out.println("-----Successfully updated adoption application------");
+        System.out.println();
+        return;
+   }
+
+   private static void adoptDelete(Connection dbconn, Scanner scanner) {
+        System.out.print("Enter application ID: ");
+        int id = scanner.nextInt();
+
+        String query = String.format("delete from lucashamacher.adoptionapplication where applicationID=%d", id);
+        try {
+
+            Statement addStmt = dbconn.createStatement();
+            addStmt.executeQuery(query);
+            addStmt.close();
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        System.out.println("-----Successfully deleted adoption application------");
+        System.out.println();
+        return;
+   }
 
     /*---------------------------------------------------------------------
     |  Method eventLanding
