@@ -2934,8 +2934,336 @@ public class EditRequests {
     |  Returns:  None
     *-------------------------------------------------------------------*/
     public static void reservationLanding(Connection dbconn, Scanner scanner) {
+        String answer = null;
 
+		System.out.println("Would you like to update, delete, or add?:");
+		System.out.println("\t(a) Update");
+		System.out.println("\t(b) Delete");
+		System.out.println("\t(c) Add");
+        System.out.println("\tEnter 'q' to go back");
+
+        answer = scanner.next();
+
+        switch (answer) {
+			case "a":
+                reserveUpdate(dbconn, scanner);
+				break;
+			case "b":
+                reserveDelete(dbconn, scanner);
+				break;
+			case "c":
+                reserveAdd(dbconn, scanner);
+				break;
+            case "d":
+                break;
+			case "q":
+				return;
+			default:
+				System.out.println("Invalid response, please try again.");
+                reservationLanding(dbconn, scanner);
+				return;
+		}
+		return;
     }
+
+    /*---------------------------------------------------------------------
+    |  Method [Method Name]
+    |
+    |  Purpose:  [Explain what this method does to support the correct
+    |      operation of its class, and how it does it.]
+    |
+	|  Pre-condition:  [Any non-obvious conditions that must exist
+    |      or be true before we can expect this method to function
+    |      correctly.]
+    |
+    |  Post-condition: [What we can expect to exist or be true after
+    |      this method has executed under the pre-condition(s).]
+    |
+    |  Parameters:
+    |      parameter_name -- [Explanation of the purpose of this
+    |          parameter to the method.  Write one explanation for each
+    |          formal parameter of this method.]
+    |
+    |  Returns:  [If this method sends back a value via the return
+    |      mechanism, describe the purpose of that value here, otherwise
+    |      state 'None.']
+    *-------------------------------------------------------------------*/
+   static private void reserveUpdate(Connection dbconn, Scanner scanner) {
+        System.out.print("Enter eventid you wish to update: ");
+        int id = scanner.nextInt();
+
+        String dobDay = null;
+        String dobMon = null;
+        String dobY = null;
+        String startTime = null;
+        String endTime = null;
+        String dateEv = null;
+        int roomID = 0;
+        
+        String answer="n";
+        while (answer.contains("n")) {
+
+            System.out.println("Please give new info");
+            System.out.print("Enter date of event, Day: ");
+            dobDay = scanner.next();
+            System.out.print("\tMonth: ");
+            dobMon = scanner.next();
+            System.out.print("\tYear: ");
+            dobY = scanner.next();
+            System.out.print("Enter starttime: ");
+            startTime = scanner.next();
+            System.out.print("Enter endtime: ");
+            endTime = scanner.next();
+            System.out.println("Enter room name:");
+            answer = scanner.next();
+            roomID = roomNameToID(dbconn, scanner, answer);
+            System.out.println();
+
+            dateEv = dobY+"-"+dobMon+"-"+dobDay;
+
+            System.out.println("Is this correct y or n?");
+            System.out.println(dobY+"-"+dobMon+"-"+dobDay+", "+startTime+", " + endTime + ", " +roomID);
+            answer = scanner.next();
+        }
+    
+        String add = String.format("update lucashamacher.reservation set reservationDate=TO_DATE('%s', 'YYYY-MM-DD'), roomID='%d')", dateEv, roomID);
+
+        try {
+
+            Statement addStmt = dbconn.createStatement();
+            addStmt.executeQuery(add);
+            addStmt.close();
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        System.out.println("-----Successfully updated reservation------");
+        System.out.println();
+        return;
+   }
+
+   /*---------------------------------------------------------------------
+    |  Method [Method Name]
+    |
+    |  Purpose:  [Explain what this method does to support the correct
+    |      operation of its class, and how it does it.]
+    |
+	|  Pre-condition:  [Any non-obvious conditions that must exist
+    |      or be true before we can expect this method to function
+    |      correctly.]
+    |
+    |  Post-condition: [What we can expect to exist or be true after
+    |      this method has executed under the pre-condition(s).]
+    |
+    |  Parameters:
+    |      parameter_name -- [Explanation of the purpose of this
+    |          parameter to the method.  Write one explanation for each
+    |          formal parameter of this method.]
+    |
+    |  Returns:  [If this method sends back a value via the return
+    |      mechanism, describe the purpose of that value here, otherwise
+    |      state 'None.']
+    *-------------------------------------------------------------------*/
+   static private void reserveAdd(Connection dbconn, Scanner scanner) {
+        
+    // need to get a valid id
+        int id;
+        int idMin = 0;
+        int idMax = 0;
+        Statement stmt = null;
+        ResultSet result = null;
+        String query = String.format("SELECT min(reservationID), max(reservationID) FROM lucashamacher.reservation");
+        try {
+
+        stmt = dbconn.createStatement();
+        result = stmt.executeQuery(query);
+
+        if (result != null) {
+
+            while (result.next()) {
+                idMin = result.getInt(1);
+                idMax = result.getInt(2);
+            }
+        } else {
+            idMin = 0;
+            idMax = 0;
+            stmt.close();  
+        }
+        System.out.println();
+
+        stmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        if (idMin > 0) {
+            id = idMin -1;
+        } else {
+            id = idMax + 1;
+        }
+
+        int custID = -1;
+        System.out.print("Enter customer name: ");
+        String answer = scanner.next();
+        custID = custIdFromName(dbconn, scanner, answer);
+        if (custID == -1) {
+            return;
+        }
+        
+        int roomID = 0;
+        String dobDay = null;
+        String dobMon = null;
+        String dobY = null;
+        String startTime = null;
+        String endTime = null;
+        String capacity = null;
+        String dateEv = null;
+        
+        answer="n";
+        while (answer.contains("n")) {
+
+            System.out.println("Please give new info");
+            System.out.print("Enter date of reservation, Day: ");
+            dobDay = scanner.next();
+            System.out.print("\tMonth: ");
+            dobMon = scanner.next();
+            System.out.print("\tYear: ");
+            dobY = scanner.next();
+            System.out.print("Enter starttime: ");
+            startTime = scanner.next();
+            System.out.print("Enter endtime: ");
+            endTime = scanner.next();
+            System.out.println("Enter room name:");
+            answer = scanner.next();
+            roomID = roomNameToID(dbconn, scanner, answer);
+            System.out.println();
+
+            dateEv = dobY+"-"+dobMon+"-"+dobDay;
+
+            System.out.println("Is this correct y or n?");
+            System.out.println(dobY+"-"+dobMon+"-"+dobDay+", "+startTime+", " + endTime + ", " +roomID);
+            answer = scanner.next();
+        }
+    
+        String add = String.format("INSERT INTO lucashamacher.reservation VALUES (%d, %d, %d, TO_DATE('%s', 'YYYY-MM-DD'), '', '', '', '')", id, custID, roomID, dateEv);
+
+        System.out.println(add);
+        try {
+
+            Statement addStmt = dbconn.createStatement();
+            addStmt.executeQuery(add);
+            addStmt.close();
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        System.out.println("-----Successfully added reservation------");
+        System.out.println();
+        return;
+   }
+
+   /*---------------------------------------------------------------------
+    |  Method [Method Name]
+    |
+    |  Purpose:  [Explain what this method does to support the correct
+    |      operation of its class, and how it does it.]
+    |
+	|  Pre-condition:  [Any non-obvious conditions that must exist
+    |      or be true before we can expect this method to function
+    |      correctly.]
+    |
+    |  Post-condition: [What we can expect to exist or be true after
+    |      this method has executed under the pre-condition(s).]
+    |
+    |  Parameters:
+    |      parameter_name -- [Explanation of the purpose of this
+    |          parameter to the method.  Write one explanation for each
+    |          formal parameter of this method.]
+    |
+    |  Returns:  [If this method sends back a value via the return
+    |      mechanism, describe the purpose of that value here, otherwise
+    |      state 'None.']
+    *-------------------------------------------------------------------*/
+   private static void reserveDelete(Connection dbconn, Scanner scanner) {
+         System.out.print("Enter reservation num to delete: ");
+        String answer = scanner.next();
+
+
+        // check before
+        LocalDate myLocalDate = LocalDate.now();
+        LocalDate localDateFromDb = null;
+        Statement stmt = null;
+        ResultSet result = null;
+        String query = String.format("select reservationDate from lucashamacher.EventRegistration where eventId=%s", answer);
+        try {
+            stmt = dbconn.createStatement();
+            result = stmt.executeQuery(query);
+            
+            if (result.next()) {
+                localDateFromDb = result.getObject("date_column", LocalDate.class);
+            }
+
+            stmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+
+        if (localDateFromDb == null || localDateFromDb.compareTo(localDateFromDb) > 0) {
+            System.out.println("This reservation cannot be deleted");
+            return;
+        }   
+
+        stmt = null;
+        query = String.format("Delete from lucashamacher.reservation where reservationId=%s", answer);
+        
+        try {
+            stmt = dbconn.createStatement();
+            stmt.executeQuery(query);
+ 
+            stmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+
+        System.out.println("-----Successfully deleted reservation-----");
+   }
 
     /*---------------------------------------------------------------------
     |  Method healthLanding
@@ -3021,26 +3349,224 @@ public class EditRequests {
                 eventAdd(dbconn, scanner);
 				break;
             case "d":
-                //eventRegister();
+                eventRegister(dbconn, scanner);
                 break;
 			case "q":
 				return;
 			default:
 				System.out.println("Invalid response, please try again.");
-                orderLanding(dbconn, scanner);
+                eventLanding(dbconn, scanner);
 				return;
 		}
 		return;
     }
 
+    /*---------------------------------------------------------------------
+    |  Method [Method Name]
+    |
+    |  Purpose:  [Explain what this method does to support the correct
+    |      operation of its class, and how it does it.]
+    |
+	|  Pre-condition:  [Any non-obvious conditions that must exist
+    |      or be true before we can expect this method to function
+    |      correctly.]
+    |
+    |  Post-condition: [What we can expect to exist or be true after
+    |      this method has executed under the pre-condition(s).]
+    |
+    |  Parameters:
+    |      parameter_name -- [Explanation of the purpose of this
+    |          parameter to the method.  Write one explanation for each
+    |          formal parameter of this method.]
+    |
+    |  Returns:  [If this method sends back a value via the return
+    |      mechanism, describe the purpose of that value here, otherwise
+    |      state 'None.']
+    *-------------------------------------------------------------------*/
     private static void eventUpdate (Connection dbconn, Scanner scanner) {
+        System.out.print("Enter eventid you wish to delete: ");
+        int id = scanner.nextInt();
 
+        String name = null;
+        String type = null;
+        String description = null;
+        String dobDay = null;
+        String dobMon = null;
+        String dobY = null;
+        String startTime = null;
+        String endTime = null;
+        String capacity = null;
+        String dateEv = null;
+        int roomID = 0;
+        
+        String answer="n";
+        while (answer.contains("n")) {
+
+            System.out.println("Please give new info");
+            System.out.print("Enter name: ");
+            name = scanner.next();
+            System.out.print("Enter type: ");
+            type = scanner.next();
+            scanner.nextLine();
+            System.out.println("Enter description: ");
+            description = scanner.nextLine();
+            System.out.print("Enter date of event, Day: ");
+            dobDay = scanner.next();
+            System.out.print("\tMonth: ");
+            dobMon = scanner.next();
+            System.out.print("\tYear: ");
+            dobY = scanner.next();
+            System.out.print("Enter starttime: ");
+            startTime = scanner.next();
+            System.out.print("Enter endtime: ");
+            endTime = scanner.next();
+            System.out.println("Enter room name:");
+            answer = scanner.next();
+            roomID = roomNameToID(dbconn, scanner, answer);
+            System.out.print("Enter capacity: ");
+            capacity = scanner.next();
+            System.out.println();
+
+            dateEv = dobY+"-"+dobMon+"-"+dobDay;
+
+            System.out.println("Is this correct y or n?");
+            System.out.println(name+", "+type+", "+dobY+"-"+dobMon+"-"+dobDay+", "+startTime+", " + endTime + ", " +capacity);
+            answer = scanner.next();
+        }
+    
+        String add = String.format("update lucashamacher.Event set eventname='%s', eventType='%s', description='%s', eventDate=TO_DATE('%s', 'YYYY-MM-DD'), roodID='%d', capacity='%s')", id, name, type, description, dateEv, roomID, capacity);
+
+        try {
+
+            Statement addStmt = dbconn.createStatement();
+            addStmt.executeQuery(add);
+            addStmt.close();
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        System.out.println("-----Successfully updated Event------");
+        System.out.println();
+        return;
     }
 
+    /*---------------------------------------------------------------------
+    |  Method [Method Name]
+    |
+    |  Purpose:  [Explain what this method does to support the correct
+    |      operation of its class, and how it does it.]
+    |
+	|  Pre-condition:  [Any non-obvious conditions that must exist
+    |      or be true before we can expect this method to function
+    |      correctly.]
+    |
+    |  Post-condition: [What we can expect to exist or be true after
+    |      this method has executed under the pre-condition(s).]
+    |
+    |  Parameters:
+    |      parameter_name -- [Explanation of the purpose of this
+    |          parameter to the method.  Write one explanation for each
+    |          formal parameter of this method.]
+    |
+    |  Returns:  [If this method sends back a value via the return
+    |      mechanism, describe the purpose of that value here, otherwise
+    |      state 'None.']
+    *-------------------------------------------------------------------*/
     private static void eventDelete (Connection dbconn, Scanner scanner) {
+        System.out.print("Enter order num to delete: ");
+        String answer = scanner.next();
 
+
+        Statement stmt = null;
+        String query = String.format("Delete from lucashamacher.Event where eventId=%s", answer);
+        
+        try {
+            stmt = dbconn.createStatement();
+            stmt.executeQuery(query);
+ 
+            stmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+
+        stmt = null;
+        query = String.format("Delete from lucashamacher.EventRegistration where eventId=%s", answer);
+        try {
+            stmt = dbconn.createStatement();
+            stmt.executeQuery(query);
+ 
+            stmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+
+        stmt = null;
+        query = String.format("Delete from lucashamacher.Staffassignment where eventId=%s", answer);
+        try {
+            stmt = dbconn.createStatement();
+            stmt.executeQuery(query);
+ 
+            stmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+
+        System.out.println("-----Successfully deleted event-----");
     }
 
+    /*---------------------------------------------------------------------
+    |  Method [Method Name]
+    |
+    |  Purpose:  [Explain what this method does to support the correct
+    |      operation of its class, and how it does it.]
+    |
+	|  Pre-condition:  [Any non-obvious conditions that must exist
+    |      or be true before we can expect this method to function
+    |      correctly.]
+    |
+    |  Post-condition: [What we can expect to exist or be true after
+    |      this method has executed under the pre-condition(s).]
+    |
+    |  Parameters:
+    |      parameter_name -- [Explanation of the purpose of this
+    |          parameter to the method.  Write one explanation for each
+    |          formal parameter of this method.]
+    |
+    |  Returns:  [If this method sends back a value via the return
+    |      mechanism, describe the purpose of that value here, otherwise
+    |      state 'None.']
+    *-------------------------------------------------------------------*/
     private static void eventAdd (Connection dbconn, Scanner scanner) {
        
         // need to get a valid id
@@ -3107,8 +3633,9 @@ public class EditRequests {
             name = scanner.next();
             System.out.print("Enter type: ");
             type = scanner.next();
-            System.out.print("Enter description: ");
-            description = scanner.next();
+            scanner.nextLine();
+            System.out.println("Enter description: ");
+            description = scanner.nextLine();
             System.out.print("Enter date of event, Day: ");
             dobDay = scanner.next();
             System.out.print("\tMonth: ");
@@ -3116,7 +3643,7 @@ public class EditRequests {
             System.out.print("\tYear: ");
             dobY = scanner.next();
             System.out.print("Enter starttime: ");
-            endTime = scanner.next();
+            startTime = scanner.next();
             System.out.print("Enter endtime: ");
             endTime = scanner.next();
             System.out.println("Enter room name:");
@@ -3133,8 +3660,9 @@ public class EditRequests {
             answer = scanner.next();
         }
     
-        String add = String.format("INSERT INTO lucashamacher.Event VALUES ('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d')", id, name, type, description, dateEv, startTime, endTime, roomID, capacity);
+        String add = String.format("INSERT INTO lucashamacher.Event VALUES (%d, '%s', '%s', '%s', TO_DATE('%s', 'YYYY-MM-DD'), '', '', %d, '%s')", id, name, type, description, dateEv, dateEv, startTime, dateEv, endTime, roomID, capacity);
 
+        System.out.println(add);
         try {
 
             Statement addStmt = dbconn.createStatement();
@@ -3184,7 +3712,7 @@ public class EditRequests {
                 System.out.println(result.getInt("roomID") + "\t" + result.getString("roomName"));
             }
         } else {
-            System.out.println("No member with that name exists"); 
+            System.out.println("No room with that name exists"); 
             stmt.close();  
             return -1;
         }
@@ -3208,12 +3736,120 @@ public class EditRequests {
         while (!answer.contains("q")) {
             if (ids.contains(Integer.parseInt(answer))) {
                 id = Integer.parseInt(answer);
-    }
-    }
+                System.out.println("returns ");
+                return id;
+            }
+            System.out.println("Please pick an ID# from the list or enter 'q' to go back ");
+        }
         return id;
     }
 
+    /*---------------------------------------------------------------------
+    |  Method [Method Name]
+    |
+    |  Purpose:  [Explain what this method does to support the correct
+    |      operation of its class, and how it does it.]
+    |
+	|  Pre-condition:  [Any non-obvious conditions that must exist
+    |      or be true before we can expect this method to function
+    |      correctly.]
+    |
+    |  Post-condition: [What we can expect to exist or be true after
+    |      this method has executed under the pre-condition(s).]
+    |
+    |  Parameters:
+    |      parameter_name -- [Explanation of the purpose of this
+    |          parameter to the method.  Write one explanation for each
+    |          formal parameter of this method.]
+    |
+    |  Returns:  [If this method sends back a value via the return
+    |      mechanism, describe the purpose of that value here, otherwise
+    |      state 'None.']
+    *-------------------------------------------------------------------*/
     private static void eventRegister(Connection dbconn, Scanner scanner) {
+
+        String answer = null;
+        System.out.print("Enter customer name: ");
+        answer=scanner.next();
+        int custID = custIdFromName(dbconn, scanner, answer);
+        if (custID == -1) {
+            return;
+        }
+
+        int id;
+        int idMin = 0;
+        int idMax = 0;
+        Statement stmt = null;
+        ResultSet result = null;
+        String query = String.format("SELECT min(registrationID), max(registrationID) FROM lucashamacher.EventRegistration");
+        try {
+
+        stmt = dbconn.createStatement();
+        result = stmt.executeQuery(query);
+
+        if (result != null) {
+
+            while (result.next()) {
+                idMin = result.getInt(1);
+                idMax = result.getInt(2);
+            }
+        } else {
+            idMin = 0;
+            idMax = 0;
+            stmt.close();  
+        }
+        System.out.println();
+
+        stmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        if (idMin > 0) {
+            id = idMin -1;
+        } else {
+            id = idMax + 1;
+        }
+
+
+        System.out.print("Enter event ID: ");
+        int eventID=scanner.nextInt();
+
+        LocalDate today = LocalDate.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String formattedDate = today.format(formatter);
+        String year = formattedDate.substring(0,4);
+        String month = formattedDate.substring(5,7);
+        String day = formattedDate.substring(8,10);
+
+        String add = String.format("INSERT INTO lucashamacher.eventRegistration VALUES ('%d', '%d', '%d', '', TO_DATE('%s-%s-%s', 'YYYY-MM-DD'))", id, custID, eventID, year, month, day);
+
+        try {
+
+            Statement addStmt = dbconn.createStatement();
+            addStmt.executeQuery(add);
+            addStmt.close();
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        System.out.println("-----Successfully added event registration------");
+        System.out.println();
+        return;
 
     }
 }
