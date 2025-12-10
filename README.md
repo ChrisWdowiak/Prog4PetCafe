@@ -235,7 +235,6 @@ Alex Herron (aherron)
 - Oracle DB setup
 - DB design
 - Normalization analysis
-- readme file
 - Design changes
 
 Chris Wdowiak (cwdowiak)
@@ -252,7 +251,9 @@ Heng Pok (hspok)
 - JDBC application
 - DB/E-R design & Planning
 - Queries creation
+- readme
 
 ============================================================
 END OF FILE
 ============================================================
+
