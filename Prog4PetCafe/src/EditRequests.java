@@ -1,5 +1,6 @@
 import java.util.Scanner;
 import java.util.ArrayList;
+import java.time.LocalDate;
 import java.sql.*;
 
 /*+----------------------------------------------------------------------
@@ -77,9 +78,8 @@ public class EditRequests {
 
 				break;
 			case "c":
-				
+				memberAdd(dbconn, scanner);
 				break;
-			
 			case "q":
 				return;
 			default:
@@ -145,7 +145,6 @@ public class EditRequests {
             } else {
                System.out.println("No member with that ID exists"); 
                 stmt.close();  
-                dbconn.close();
                 return;
             }
             System.out.println();
@@ -253,7 +252,6 @@ public class EditRequests {
             } else {
                System.out.println("No member with that name exists"); 
                 stmt.close();  
-                dbconn.close();
                 return;
             }
             System.out.println();
@@ -316,7 +314,7 @@ public class EditRequests {
                         System.out.println(String.format("%s %s, %s, %s, %s/%s/%s, %s %s, %s", name, nameLast, phone, email, dobY, dobMon, dobDay, emergencyName, emergencyLast, emergencyPhone));
                         answer = scanner.next();
                     }
-                     String update = String.format("UPDATE lucashamacher.Customer SET name='%s %s', phone='%s', email='%s', dateOfBirth='%s/%s/%s', emergencyContactName='%s %s', emergencyContactPhone='%s' WHERE customerID=%d", name,nameLast,phone,email,dobY,dobMon,dobDay,emergencyName,emergencyLast,emergencyPhone, id);
+                     String update = String.format("UPDATE lucashamacher.Customer SET name='%s %s', phone='%s', email='%s', dateOfBirth=TO_DATE('%s-%s-%s', 'YYYY-MM-DD'), emergencyContactName='%s %s', emergencyContactPhone='%s' WHERE customerID=%d", name,nameLast,phone,email,dobY,dobMon,dobDay,emergencyName,emergencyLast,emergencyPhone, id);
                     //System.out.println(update);
                     try {
 
@@ -347,5 +345,136 @@ public class EditRequests {
 
     }
 
+    /*---------------------------------------------------------------------
+    |  Method memberAdd
+    |
+    |  Purpose:  handles adding a member in the table
+    |
+	|  Pre-condition:  user requested this and oracle connection established
+    |
+    |  Post-condition: request will be handled and tuple(s) in the member table
+    |      will be added.
+    |
+    |  Parameters:
+    |      dbconn -- Our Oracle connection object.
+	|	   scanner -- just a scanner object so we dont create new ones.
+    |
+    |  Returns:  None.
+    *-------------------------------------------------------------------*/
+    public static void memberAdd(Connection dbconn, Scanner scanner) {
+
+        // need to get a valid id
+        int id;
+        int idMin = 0;
+        int idMax = 0;
+        Statement stmt = null;
+        ResultSet result = null;
+        String query = String.format("SELECT min(customerID), max(customerID) FROM lucashamacher.Customer");
+        try {
+
+        stmt = dbconn.createStatement();
+        result = stmt.executeQuery(query);
+
+        if (result != null) {
+
+            while (result.next()) {
+                idMin = result.getInt(1);
+                idMax = result.getInt(2);
+            }
+        } else {
+            idMin = 0;
+            idMax = 0;
+            stmt.close();  
+        }
+        System.out.println();
+
+        stmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        if (idMin > 0) {
+            id = idMin -1;
+        } else {
+            id = idMax + 1;
+        }
+
+
+        String name = null;
+        String nameLast = null;
+        String phone = null;
+        String email = null;
+        String dobDay = null;
+        String dobMon = null;
+        String dobY = null;
+        String emergencyName = null;
+        String emergencyLast = null;
+        String emergencyPhone = null;
+        
+        String answer="n";
+        while (answer.contains("n")) {
+
+            System.out.println("Please give new info");
+            System.out.print("Enter name: ");
+            name = scanner.next();
+            nameLast = scanner.next();
+            System.out.print("Enter phone: ");
+            phone = scanner.next();
+            System.out.print("Enter email: ");
+            email = scanner.next();
+            System.out.print("Enter date of birth, Day: ");
+            dobDay = scanner.next();
+            System.out.print("\tMonth: ");
+            dobMon = scanner.next();
+            System.out.print("\tYear: ");
+            dobY = scanner.next();
+            System.out.print("Enter emergency contact name: ");
+            emergencyName = scanner.next();
+            emergencyLast = scanner.next();
+            System.out.print("Enter emergency contact phone#: ");
+            emergencyPhone = scanner.next();
+            System.out.println();
+
+            System.out.println("Is this correct y or n?");
+            System.out.println(String.format("%s %s, %s, %s, %s/%s/%s, %s %s, %s", name, nameLast, phone, email, dobY, dobMon, dobDay, emergencyName, emergencyLast, emergencyPhone));
+            answer = scanner.next();
+        }
+        /* 
+        String dateString = String.format("%s-%s-%s", dobY, dobMon, dobDay);
+        LocalDate localDate = LocalDate.parse(dateString);
+        java.sql.Date sqlDate = java.sql.Date.valueOf(localDate);
+        String add = String.format("INSERT INTO lucashamacher.Customer VALUES ('%d', '%s %s', '%s', '%s', '", id,name,nameLast,phone,email);
+        add += sqlDate;
+        add += String.format("', '%s %s', '%s')", emergencyName, emergencyLast, emergencyPhone);
+        System.out.println(add);
+        */
+       String add = String.format("INSERT INTO lucashamacher.Customer VALUES ('%d', '%s %s', '%s', '%s', TO_DATE('%s-%s-%s', 'YYYY-MM-DD'), '%s %s', '%s')", id, name, nameLast, phone, email, dobY, dobMon, dobDay, emergencyName, emergencyLast, emergencyPhone);
+
+        try {
+
+            Statement addStmt = dbconn.createStatement();
+            result = addStmt.executeQuery(add);
+            addStmt.close();
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        System.out.println("-----Successfully added member------");
+        return;
+    }
 
 }
