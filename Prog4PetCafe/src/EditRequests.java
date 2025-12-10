@@ -2020,11 +2020,383 @@ public class EditRequests {
     |  Returns:  None
     *-------------------------------------------------------------------*/
     public static void orderLanding(Connection dbconn, Scanner scanner) {
+        String answer = null;
 
+		System.out.println("Would you like to update, delete, or add?:");
+		System.out.println("\t(a) Update");
+		System.out.println("\t(b) Delete");
+		System.out.println("\t(c) Add");
+        System.out.println("\tEnter 'q' to go back");
+
+        answer = scanner.next();
+
+        switch (answer) {
+			case "a":
+                orderUpdate(dbconn, scanner);
+				break;
+			case "b":
+                orderDelete(dbconn, scanner);
+				break;
+			case "c":
+                orderAdd(dbconn, scanner);
+				break;
+            case "d":
+                break;
+			case "q":
+				return;
+			default:
+				System.out.println("Invalid response, please try again.");
+                orderLanding(dbconn, scanner);
+				return;
+		}
+		return;
+    }
+
+    private static void orderUpdate(Connection dbconn, Scanner scanner) {
+        // TODO
+    }
+
+    private static void orderDelete(Connection dbconn, Scanner scanner) {
+        // TODO
     }
 
     /*---------------------------------------------------------------------
-    |  Method orderLanding
+    |  Method orderAdd
+    |
+    |  Purpose:  handles adding a order in the table
+    |
+	|  Pre-condition:  user requested this and oracle connection established
+    |
+    |  Post-condition: request will be handled and tuple(s) in the order tables
+    |      will be added.
+    |
+    |  Parameters:
+    |      dbconn -- Our Oracle connection object.
+	|	   scanner -- just a scanner object so we dont create new ones.
+    |
+    |  Returns:  None.
+    *-------------------------------------------------------------------*/
+    private static void orderAdd(Connection dbconn, Scanner scanner) {
+        // need to get a valid id
+        int id;
+        int idMin = 0;
+        int idMax = 0;
+        Statement stmt = null;
+        ResultSet result = null;
+        String query = String.format("SELECT min(orderItemID), max(orderItemID) FROM lucashamacher.OrderItem");
+        try {
+
+        stmt = dbconn.createStatement();
+        result = stmt.executeQuery(query);
+
+        if (result != null) {
+
+            while (result.next()) {
+                idMin = result.getInt(1);
+                idMax = result.getInt(2);
+            }
+        } else {
+            idMin = 0;
+            idMax = 0;
+            stmt.close();  
+        }
+        System.out.println();
+
+        stmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        if (idMin > 0) {
+            id = idMin -1;
+        } else {
+            id = idMax + 1;
+        }
+
+        int orderID = 0;
+        int menuItemID = 0;
+        int quantity = 0;
+        
+        String answer="n";
+        while (answer.contains("n")) {
+
+            System.out.println("What are you ordering?");
+            System.out.println("\t(a) Coffee");
+            System.out.println("\t(b) Tea");
+            System.out.println("\t(c) Sandwich");
+            System.out.println("\t(d) Salad");
+            System.out.println("\t(e) Cookie");
+            answer =scanner.next();
+            switch (answer) {
+                case "a":
+                    menuItemID = 1;
+                    break;
+                case "b":
+                    menuItemID = 2;
+                    break;
+                case "c":
+                    menuItemID = 3;
+                    break;
+                case "d":
+                    menuItemID = 4;
+                    break;
+                case "e":
+                    menuItemID = 5;
+                    break;
+                default:
+                    System.out.println("Item does not exist on menu");
+                    return;
+            }
+            System.out.println("How many?: ");
+            quantity = scanner.nextInt();
+
+            System.out.print("Is this order associated with a reservation (y/n)?: ");
+            answer =scanner.next(); 
+            while (!answer.equals("y") && !answer.equals("n")) {
+                answer =scanner.next();
+            }
+            if (answer.equals("n")) {
+                orderID = -1;
+            } else {
+                orderID = findOrderFromReserve(dbconn, scanner);
+                if (orderID == -1) {
+                    System.out.println("Reservation does not exist");
+                    return;
+                }
+            }
+            
+            System.out.println();
+            
+            System.out.println("Is this correct y or n?");
+            answer = scanner.next();
+        }
+        orderReservation(dbconn, orderID, menuItemID, quantity);
+        
+        String add = "INSERT INTO lucashamacher.OrderItem VALUES ('"+id+ "', '";
+        if (orderID != -1) {
+            add += orderID;
+        }
+        add += "', '" + menuItemID+ "', '', '" + quantity + "')";
+
+        System.out.println(add);
+        //String add = String.format("INSERT INTO lucashamacher.OrderItem VALUES ('%d', '%d', '%d', '', '%d')", id, orderID, menuItemID, quantity);
+
+        try {
+
+            Statement addStmt = dbconn.createStatement();
+            addStmt.executeQuery(add);
+            addStmt.close();
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        System.out.println("-----Successfully added Order------");
+        System.out.println();
+        return;
+    }
+
+    /*---------------------------------------------------------------------
+    |  Method findOrderFromReserve
+    |
+    |  Purpose:  this method finds a order to a reservation
+    |
+    |  Parameters:
+    |      dbconn -- Our Oracle connection object.
+	|	   scanner -- just a scanner object so we dont create new ones.
+    |
+    |  Returns:  int of the orderID
+    *-------------------------------------------------------------------*/
+    private static int findOrderFromReserve(Connection dbconn, Scanner scanner) {
+        System.out.println("Enter customer name");
+        String answer = scanner.next();
+        int custId = custIdFromName(dbconn, scanner, answer);
+        if (custId == -1) {
+           // no customer
+            return -1;
+        }
+
+        return -1;
+    }
+
+    /*---------------------------------------------------------------------
+    |  Method custIdFromName
+    |
+    |  Purpose:  this method finds a customer id from a given name pattern
+    |
+	|  Pre-condition:  we need to determine a cust id
+    |
+    |  Post-condition: the users will help us determine which one
+    |
+    |  Parameters:
+    |      dbconn -- Our Oracle connection object.
+	|	   scanner -- just a scanner object so we dont create new ones.
+    |      name -- name we are matching with
+    |
+    |  Returns:  int of the custID
+    *-------------------------------------------------------------------*/
+    private static int custIdFromName(Connection dbconn, Scanner scanner, String name) {
+        Statement stmt = null;
+        ResultSet result = null;
+        String query = "SELECT customerID, name FROM lucashamacher.Customer WHERE name LIKE '%"+name+"%'";
+        ArrayList<Integer> ids = new ArrayList<Integer>();
+
+        try {
+            stmt = dbconn.createStatement();
+            result = stmt.executeQuery(query);
+
+            if (result != null) {
+
+                System.out.println("Results of name search are:");
+
+                ResultSetMetaData resultmetadata = result.getMetaData();
+
+                for (int i = 1; i <= resultmetadata.getColumnCount(); i++) {
+                    System.out.print(resultmetadata.getColumnName(i) + "\t");
+                }
+                System.out.println();
+
+                while (result.next()) {
+                    ids.add(result.getInt("customerID"));
+                    System.out.println(result.getInt("customerID") + "\t" + result.getString("name"));
+                }
+            } else {
+               System.out.println("No member with that name exists"); 
+                stmt.close();  
+                return -1;
+            }
+            System.out.println();
+
+            stmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        
+        System.out.print("Enter which ID you are looking for: ");
+        String answer = scanner.next();
+        
+         if (!answer.matches("\\d+")) {
+            return -1;
+        }
+
+        if (ids.contains(Integer.parseInt(answer))) {
+            return Integer.parseInt(answer);
+        }
+        return -1;
+    }
+
+    /*---------------------------------------------------------------------
+    |  Method reservationLanding
+    |
+    |  Purpose:  this method updates the reservationorder table specifically
+    |
+	|  Pre-condition:  User requested to add an order with a reservation
+    |
+    |  Post-condition: the users request will be handled and the reservation table will
+    |      be modified.
+    |
+    |  Parameters:
+    |      dbconn -- Our Oracle connection object.
+	|	   scanner -- just a scanner object so we dont create new ones.
+    |      menuID -- fk that corresponds to pk in menuItem
+    |      quantity -- # of items
+    |
+    |  Returns:  None
+    *-------------------------------------------------------------------*/
+    private static void orderReservation(Connection dbconn, int orderId, int menuID, int quantity) {
+
+        int priceAdd = 0;
+        int oldPrice = 0;
+        Statement stmt = null;
+        ResultSet result = null;
+        String query = "SELECT price FROM lucashamacher.MenuItem WHERE menuItemID=" + menuID;
+
+        try {
+            stmt = dbconn.createStatement();
+            result = stmt.executeQuery(query);
+
+            if (result != null) {
+                while (result.next()) {
+                    priceAdd = result.getInt(1) * quantity;
+                }
+            stmt.close();  
+            }
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+
+        query = "SELECT totalamount from lucashamacher.ReservationOrder where orderid=" + orderId;
+        try {
+            stmt = dbconn.createStatement();
+            result = stmt.executeQuery(query);
+
+            if (result != null) {
+                while (result.next()) {
+                    oldPrice = result.getInt(1);
+                }
+            stmt.close();  
+            }
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+
+        priceAdd= oldPrice + priceAdd;
+        query = String.format("UPDATE lucashamacher.ReservationOrder SET totalamount='%d' where orderid=%d",priceAdd,orderId);
+        try {
+            stmt = dbconn.createStatement();
+            stmt.executeQuery(query);
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+        }
+        return;
+    }
+
+    /*---------------------------------------------------------------------
+    |  Method reservationLanding
     |
     |  Purpose:  this method serves as the landing for an edit reservation request
     |      so that it can call 3 helpers for update, delete, and add.
