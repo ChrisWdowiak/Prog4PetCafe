@@ -66,6 +66,7 @@ public class EditRequests {
 		System.out.println("\t(a) Update");
 		System.out.println("\t(b) Delete");
 		System.out.println("\t(c) Add");
+        System.out.println("\t(d) Change membership");
         System.out.println("\tEnter 'q' to go back");
 
         answer = scanner.next();
@@ -75,11 +76,14 @@ public class EditRequests {
 				memberUpdate(dbconn, scanner);
 				break;
 			case "b":
-
+                memberDelete(dbconn, scanner);
 				break;
 			case "c":
 				memberAdd(dbconn, scanner);
 				break;
+            case "d":
+
+                break;
 			case "q":
 				return;
 			default:
@@ -222,13 +226,14 @@ public class EditRequests {
 
             }
             System.out.println("-----Successfully updated member------");
+            System.out.println();
             return;
 
         } else {
             // name case
 		    Statement stmt = null;
 		    ResultSet result = null;
-            String query = String.format("SELECT customerID, name FROM lucashamacher.Customer WHERE name LIKE '%%s%'", answer);
+            String query = "SELECT customerID, name FROM lucashamacher.Customer WHERE name LIKE '%"+answer+"%'";
             ArrayList<Integer> ids = new ArrayList<Integer>();
             try {
             stmt = dbconn.createStatement();
@@ -333,6 +338,7 @@ public class EditRequests {
 
                     }
                     System.out.println("-----Successfully updated member------");
+                    System.out.println();
                     return;
                 }
 
@@ -446,16 +452,8 @@ public class EditRequests {
             System.out.println(String.format("%s %s, %s, %s, %s/%s/%s, %s %s, %s", name, nameLast, phone, email, dobY, dobMon, dobDay, emergencyName, emergencyLast, emergencyPhone));
             answer = scanner.next();
         }
-        /* 
-        String dateString = String.format("%s-%s-%s", dobY, dobMon, dobDay);
-        LocalDate localDate = LocalDate.parse(dateString);
-        java.sql.Date sqlDate = java.sql.Date.valueOf(localDate);
-        String add = String.format("INSERT INTO lucashamacher.Customer VALUES ('%d', '%s %s', '%s', '%s', '", id,name,nameLast,phone,email);
-        add += sqlDate;
-        add += String.format("', '%s %s', '%s')", emergencyName, emergencyLast, emergencyPhone);
-        System.out.println(add);
-        */
-       String add = String.format("INSERT INTO lucashamacher.Customer VALUES ('%d', '%s %s', '%s', '%s', TO_DATE('%s-%s-%s', 'YYYY-MM-DD'), '%s %s', '%s')", id, name, nameLast, phone, email, dobY, dobMon, dobDay, emergencyName, emergencyLast, emergencyPhone);
+    
+        String add = String.format("INSERT INTO lucashamacher.Customer VALUES ('%d', '%s %s', '%s', '%s', TO_DATE('%s-%s-%s', 'YYYY-MM-DD'), '%s %s', '%s')", id, name, nameLast, phone, email, dobY, dobMon, dobDay, emergencyName, emergencyLast, emergencyPhone);
 
         try {
 
@@ -474,7 +472,278 @@ public class EditRequests {
 
         }
         System.out.println("-----Successfully added member------");
+        System.out.println();
         return;
+    }
+
+    /*---------------------------------------------------------------------
+    |  Method memberDelete
+    |
+    |  Purpose:  handles deleting a member in the table
+    |
+	|  Pre-condition:  user requested this and oracle connection established
+    |
+    |  Post-condition: request will be handled and tuple(s) in the member table
+    |      will be deleted.
+    |
+    |  Parameters:
+    |      dbconn -- Our Oracle connection object.
+	|	   scanner -- just a scanner object so we dont create new ones.
+    |
+    |  Returns:  None.
+    *-------------------------------------------------------------------*/
+    public static void memberDelete(Connection dbconn, Scanner scanner) {
+
+        String answer = null;
+
+		System.out.print("Enter the ID or name of the member you wish to delete: ");
+        answer = scanner.next();
+        System.out.println();
+
+        if (answer.matches("\\d+")) {
+            // case ID
+            int id = Integer.parseInt(answer);
+		    Statement stmt = null;
+		    ResultSet result = null;
+            String query = String.format("SELECT * FROM lucashamacher.Customer WHERE customerID=%d", id);
+            try {
+
+            stmt = dbconn.createStatement();
+            result = stmt.executeQuery(query);
+
+            if (result != null) {
+
+                System.out.println("The current tuple is:");
+
+                ResultSetMetaData resultmetadata = result.getMetaData();
+
+                for (int i = 1; i <= resultmetadata.getColumnCount(); i++) {
+                    System.out.print(resultmetadata.getColumnName(i) + "\t");
+                }
+                System.out.println();
+
+                while (result.next()) {
+                    System.out.println(result.getInt("customerID") + "\t" + result.getString("name") + 
+                    "\t" + result.getString("phone") + "\t" + result.getString("email") + "\t" + 
+                    result.getDate("dateOfBirth") + "\t" + result.getString("emergencyContactName") +
+                    "\t" + result.getString("emergencyContactPhone") );
+                }
+            } else {
+               System.out.println("No member with that ID exists"); 
+                stmt.close();  
+                return;
+            }
+            System.out.println();
+
+            stmt.close();  
+
+            } catch (SQLException e) {
+
+                System.err.println("*** SQLException:  "
+                    + "Could not fetch query results.");
+                System.err.println("\tMessage:   " + e.getMessage());
+                System.err.println("\tSQLState:  " + e.getSQLState());
+                System.err.println("\tErrorCode: " + e.getErrorCode());
+                System.exit(-1);
+
+            }
+
+            System.out.println("Is this the member you wish to delete (y/n)?: ");
+            answer = scanner.next();
+
+            if (answer.contains("y")) {
+                if (!memberDeleteChecks(dbconn, scanner, id)) {
+                    System.out.println("This member is unable to be deleted currently");
+                    return;   
+                }
+                String deleteQ = String.format("DELETE FROM lucashamacher.Customer WHERE customerID=%d", id);
+                Statement delStmt = null;
+
+                try {
+
+                    delStmt = dbconn.createStatement();
+                    delStmt.executeQuery(deleteQ);
+                    delStmt.close();  
+
+                } catch (SQLException e) {
+
+                    System.err.println("*** SQLException:  "
+                        + "Could not fetch query results.");
+                    System.err.println("\tMessage:   " + e.getMessage());
+                    System.err.println("\tSQLState:  " + e.getSQLState());
+                    System.err.println("\tErrorCode: " + e.getErrorCode());
+                    System.exit(-1);
+                }                
+                System.out.println("-----Successfully deleted member-----");
+                System.out.println();
+                return;
+
+            } else {
+                return;
+            }
+        }
+
+        // case names
+        Statement stmt = null;
+        ResultSet result = null;
+        String query = "SELECT customerID, name FROM lucashamacher.Customer WHERE name LIKE '%"+answer+"%'";
+        ArrayList<Integer> ids = new ArrayList<Integer>();
+
+        try {
+            stmt = dbconn.createStatement();
+            result = stmt.executeQuery(query);
+
+            if (result != null) {
+
+                System.out.println("Results of name search are:");
+
+                ResultSetMetaData resultmetadata = result.getMetaData();
+
+                for (int i = 1; i <= resultmetadata.getColumnCount(); i++) {
+                    System.out.print(resultmetadata.getColumnName(i) + "\t");
+                }
+                System.out.println();
+
+                while (result.next()) {
+                    ids.add(result.getInt("customerID"));
+                    System.out.println(result.getInt("customerID") + "\t" + result.getString("name"));
+                }
+            } else {
+               System.out.println("No member with that name exists"); 
+                stmt.close();  
+                return;
+            }
+            System.out.println();
+
+            stmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        
+        System.out.print("Enter which ID you wish to delete: ");
+        answer = scanner.next();
+        
+         if (!answer.matches("\\d+")) {
+            return;
+         }
+
+        if (ids.contains(Integer.parseInt(answer))) {
+            int id =Integer.parseInt(answer);
+
+            if (!memberDeleteChecks(dbconn, scanner, id)) {
+                System.out.println("This member is unable to be deleted currently");
+                return;
+            }
+            String deleteQ = String.format("DELETE FROM lucashamacher.Customer WHERE customerID=%d", id);
+            Statement delStmt = null;
+
+            try {
+
+                delStmt = dbconn.createStatement();
+                delStmt.executeQuery(deleteQ);
+                delStmt.close();  
+
+            } catch (SQLException e) {
+
+                System.err.println("*** SQLException:  "
+                    + "Could not fetch query results.");
+                System.err.println("\tMessage:   " + e.getMessage());
+                System.err.println("\tSQLState:  " + e.getSQLState());
+                System.err.println("\tErrorCode: " + e.getErrorCode());
+                System.exit(-1);
+            }                
+            System.out.println("-----Successfully deleted member-----");
+            System.out.println();
+            return;
+        }
+        return;
+    }
+
+    /*---------------------------------------------------------------------
+    |  Method memberDeleteChecks
+    |
+    |  Purpose:  checks if member that is requested to be deleted can be
+    |
+	|  Pre-condition:  user requested this and oracle connection established
+    |
+    |  Post-condition: request will be handled and tuple(s) in the member table
+    |      will be deleted.
+    |
+    |  Parameters:
+    |      dbconn -- Our Oracle connection object.
+	|	   scanner -- just a scanner object so we dont create new ones.
+    |      id -- the customerID
+    |
+    |  Returns:  None.
+    *-------------------------------------------------------------------*/
+    private static boolean memberDeleteChecks(Connection dbconn, Scanner scanner, int id) {
+
+        // event reservation check
+        String eventQ = String.format("SELECT registrationID, customerID FROM lucashamacher.EventRegistration WHERE customerID=%d", id);
+        Statement eventStmt = null;
+        ResultSet result = null;
+        try {
+
+            eventStmt = dbconn.createStatement();
+            result = eventStmt.executeQuery(eventQ);
+
+            if (result != null) {
+                if (result.next()) {
+                    eventStmt.close();
+                    return false; 
+                }
+                eventStmt.close();
+            }
+
+            eventStmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+        }
+
+        // adoption applications check
+        String adoptQ = String.format("SELECT applicationID, customerID FROM lucashamacher.AdoptionApplication WHERE customerID=%d", id);
+        Statement adoptStmt = null;
+        try {
+
+            adoptStmt = dbconn.createStatement();
+            result = adoptStmt.executeQuery(adoptQ);
+
+            if (result != null) {
+                if (result.next()) {
+                    adoptStmt.close();  
+                    return false; 
+                }
+                adoptStmt.close();
+            }
+
+            adoptStmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+        }
+
+        return true;
     }
 
 }
