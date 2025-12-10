@@ -159,7 +159,8 @@ String validation ensures:
 • Alphabetic input where required
 
 *Note: if an input is entered and no result is returned, it means
-the entry with the input does not exist (e.g, input name)
+the entry with the input does not exist (e.g, input name). And
+all string inputs are case-sensitive.
 
 ============================================================
 6. SQL SAFETY & ERROR HANDLING
@@ -258,5 +259,6 @@ Heng Pok (hspok)
 ============================================================
 END OF FILE
 ============================================================
+
 
 
