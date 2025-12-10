@@ -2989,7 +2989,7 @@ public class EditRequests {
     |      state 'None.']
     *-------------------------------------------------------------------*/
    static private void reserveUpdate(Connection dbconn, Scanner scanner) {
-        System.out.print("Enter eventid you wish to update: ");
+        System.out.print("Enter reserveid you wish to update: ");
         int id = scanner.nextInt();
 
         String dobDay = null;
@@ -3026,7 +3026,7 @@ public class EditRequests {
             answer = scanner.next();
         }
     
-        String add = String.format("update lucashamacher.reservation set reservationDate=TO_DATE('%s', 'YYYY-MM-DD'), roomID='%d')", dateEv, roomID);
+        String add = String.format("update lucashamacher.reservation set reservationDate=TO_DATE('%s', 'YYYY-MM-DD'), roomID='%d' where reservationID=%d)", dateEv, roomID, id);
 
         try {
 
@@ -3284,7 +3284,321 @@ public class EditRequests {
     |  Returns:  None
     *-------------------------------------------------------------------*/
     public static void healthLanding(Connection dbconn, Scanner scanner) {
+        String answer = null;
 
+		System.out.println("Would you like to update, delete, or add?:");
+		System.out.println("\t(a) Update");
+		System.out.println("\t(b) Add");
+        System.out.println("\tEnter 'q' to go back");
+
+        answer = scanner.next();
+
+        switch (answer) {
+			case "a":
+                healthUpdate(dbconn, scanner);
+				break;
+			case "b":
+                healthAdd(dbconn, scanner);
+				break;
+			case "c":
+				break;
+            case "d":
+                break;
+			case "q":
+				return;
+			default:
+				System.out.println("Invalid response, please try again.");
+                reservationLanding(dbconn, scanner);
+				return;
+		}
+		return;
+    }
+
+    /*---------------------------------------------------------------------
+    |  Method [Method Name]
+    |
+    |  Purpose:  [Explain what this method does to support the correct
+    |      operation of its class, and how it does it.]
+    |
+	|  Pre-condition:  [Any non-obvious conditions that must exist
+    |      or be true before we can expect this method to function
+    |      correctly.]
+    |
+    |  Post-condition: [What we can expect to exist or be true after
+    |      this method has executed under the pre-condition(s).]
+    |
+    |  Parameters:
+    |      parameter_name -- [Explanation of the purpose of this
+    |          parameter to the method.  Write one explanation for each
+    |          formal parameter of this method.]
+    |
+    |  Returns:  [If this method sends back a value via the return
+    |      mechanism, describe the purpose of that value here, otherwise
+    |      state 'None.']
+    *-------------------------------------------------------------------*/
+   private static void healthAdd(Connection dbconn, Scanner scanner) {
+        
+    String answer = null;
+        System.out.print("Enter name of pet you wish to add record for: ");
+        answer =scanner.next();
+
+        int petID = petIdFromName(dbconn, scanner, answer);
+        if (petID == -1) {
+            return;
+        }
+
+        // need to get a valid id
+        int id;
+        int idMin = 0;
+        int idMax = 0;
+        Statement stmt = null;
+        ResultSet result = null;
+        String query = String.format("SELECT min(healthrecordID), max(healthrecordID) FROM lucashamacher.healthrecord");
+        try {
+
+        stmt = dbconn.createStatement();
+        result = stmt.executeQuery(query);
+
+        if (result != null) {
+
+            while (result.next()) {
+                idMin = result.getInt(1);
+                idMax = result.getInt(2);
+            }
+        } else {
+            idMin = 0;
+            idMax = 0;
+            stmt.close();  
+        }
+        System.out.println();
+
+        stmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        if (idMin > 0) {
+            id = idMin -1;
+        } else {
+            id = idMax + 1;
+        }  
+
+        int staffID = 0;
+        String description = null;
+        String type = null;
+        String dateEv = null;
+
+        answer = "n";
+        while(answer.equals("n")) {
+
+            System.out.println("Enter staffID for record: ");
+            staffID = Integer.parseInt(scanner.next());
+            System.out.print("Enter type: ");
+            type = scanner.next();
+            scanner.nextLine();
+            System.out.println("Enter description: ");
+            description = scanner.nextLine();
+            // get todays date
+            LocalDate today = LocalDate.now();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            String formattedDate = today.format(formatter);
+            String year = formattedDate.substring(0,4);
+            String month = formattedDate.substring(5,7);
+            String day = formattedDate.substring(8,10);
+
+            dateEv = year+"-"+month+"-"+day;
+
+            System.out.println("Is this correct y or n?");
+            System.out.println(petID+", "+staffID+", "+type+"-"+dateEv);
+            answer = scanner.next();
+    }
+
+    query = String.format("Insert into lucashamacher.healthrecord values (%d, %d, %d, '%s', '%s', TO_DATE('%s', 'YYYY-MM-DD'), '' )", id, petID, staffID, type, description, dateEv);
+
+    try {
+
+            Statement addStmt = dbconn.createStatement();
+            addStmt.executeQuery(query);
+            addStmt.close();
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        System.out.println("-----Successfully added health record------");
+        System.out.println();
+        return;
+   }
+
+   /*---------------------------------------------------------------------
+    |  Method [Method Name]
+    |
+    |  Purpose:  [Explain what this method does to support the correct
+    |      operation of its class, and how it does it.]
+    |
+	|  Pre-condition:  [Any non-obvious conditions that must exist
+    |      or be true before we can expect this method to function
+    |      correctly.]
+    |
+    |  Post-condition: [What we can expect to exist or be true after
+    |      this method has executed under the pre-condition(s).]
+    |
+    |  Parameters:
+    |      parameter_name -- [Explanation of the purpose of this
+    |          parameter to the method.  Write one explanation for each
+    |          formal parameter of this method.]
+    |
+    |  Returns:  [If this method sends back a value via the return
+    |      mechanism, describe the purpose of that value here, otherwise
+    |      state 'None.']
+    *-------------------------------------------------------------------*/
+   private static void healthUpdate(Connection dbconn, Scanner scanner) {
+        System.out.println("Enter health record ID: ");
+        int id = scanner.nextInt();
+
+        String type = null;
+        String description = null;
+        String dateEv = null;
+
+        String answer = "n";
+        while(answer.equals("n")) {
+
+            System.out.print("Enter type: ");
+            type = scanner.next();
+            scanner.nextLine();
+            System.out.println("Enter description: ");
+            description = scanner.nextLine();
+            // get todays date
+            LocalDate today = LocalDate.now();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            String formattedDate = today.format(formatter);
+            String year = formattedDate.substring(0,4);
+            String month = formattedDate.substring(5,7);
+            String day = formattedDate.substring(8,10);
+
+            dateEv = year+"-"+month+"-"+day;
+
+            System.out.println("Is this correct y or n?");
+            System.out.println(type+"-"+dateEv);
+            answer = scanner.next();
+    }
+
+        String query = String.format("Update lucashamacher.healthrecord set recordtype='%s', description='%s', recordDate=TO_DATE('%s', 'YYYY-MM-DD')", type, description, dateEv);
+
+        try {
+
+            Statement addStmt = dbconn.createStatement();
+            addStmt.executeQuery(query);
+            addStmt.close();
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        System.out.println("-----Successfully updated health record------");
+        System.out.println();
+        return;
+
+
+   }
+
+   /*---------------------------------------------------------------------
+    |  Method [Method Name]
+    |
+    |  Purpose:  [Explain what this method does to support the correct
+    |      operation of its class, and how it does it.]
+    |
+	|  Pre-condition:  [Any non-obvious conditions that must exist
+    |      or be true before we can expect this method to function
+    |      correctly.]
+    |
+    |  Post-condition: [What we can expect to exist or be true after
+    |      this method has executed under the pre-condition(s).]
+    |
+    |  Parameters:
+    |      parameter_name -- [Explanation of the purpose of this
+    |          parameter to the method.  Write one explanation for each
+    |          formal parameter of this method.]
+    |
+    |  Returns:  [If this method sends back a value via the return
+    |      mechanism, describe the purpose of that value here, otherwise
+    |      state 'None.']
+    *-------------------------------------------------------------------*/
+   private static int petIdFromName(Connection dbconn, Scanner scanner, String name) {
+        Statement stmt = null;
+        ResultSet result = null;
+        String query = "SELECT petID, name FROM lucashamacher.pet WHERE name LIKE '%"+name+"%'";
+        ArrayList<Integer> ids = new ArrayList<Integer>();
+
+        try {
+            stmt = dbconn.createStatement();
+            result = stmt.executeQuery(query);
+
+            if (result != null) {
+
+                System.out.println("Results of name search are:");
+
+                ResultSetMetaData resultmetadata = result.getMetaData();
+
+                for (int i = 1; i <= resultmetadata.getColumnCount(); i++) {
+                    System.out.print(resultmetadata.getColumnName(i) + "\t");
+                }
+                System.out.println();
+
+                while (result.next()) {
+                    ids.add(result.getInt("petID"));
+                    System.out.println(result.getInt("petID") + "\t" + result.getString("name"));
+                }
+            } else {
+               System.out.println("No pet with that name exists"); 
+                stmt.close();  
+                return -1;
+            }
+            System.out.println();
+
+            stmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        
+        System.out.print("Enter which ID you are looking for: ");
+        String answer = scanner.next();
+        
+         if (!answer.matches("\\d+")) {
+            return -1;
+        }
+
+        if (ids.contains(Integer.parseInt(answer))) {
+            return Integer.parseInt(answer);
+        }
+        return -1;
     }
 
     /*---------------------------------------------------------------------
