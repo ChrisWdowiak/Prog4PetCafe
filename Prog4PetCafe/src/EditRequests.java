@@ -129,9 +129,11 @@ public class EditRequests {
 
             stmt = dbconn.createStatement();
             result = stmt.executeQuery(query);
+            boolean found = false;
 
-            if (result != null) {
+            if (result.next()) {
 
+                found = true;
                 System.out.println("The current tuple is:");
 
                 ResultSetMetaData resultmetadata = result.getMetaData();
@@ -141,13 +143,12 @@ public class EditRequests {
                 }
                 System.out.println();
 
-                while (result.next()) {
-                    System.out.println(result.getInt("customerID") + "\t" + result.getString("name") + 
-                    "\t" + result.getString("phone") + "\t" + result.getString("email") + "\t" + 
-                    result.getDate("dateOfBirth") + "\t" + result.getString("emergencyContactName") +
-                    "\t" + result.getString("emergencyContactPhone") );
-                }
-            } else {
+                System.out.println(result.getInt("customerID") + "\t" + result.getString("name") + 
+                "\t" + result.getString("phone") + "\t" + result.getString("email") + "\t" + 
+                result.getDate("dateOfBirth") + "\t" + result.getString("emergencyContactName") +
+                "\t" + result.getString("emergencyContactPhone") );
+            }
+            if (!found) {
                System.out.println("No member with that ID exists"); 
                 stmt.close();  
                 return;
@@ -511,9 +512,11 @@ public class EditRequests {
 
             stmt = dbconn.createStatement();
             result = stmt.executeQuery(query);
+            boolean found = false;
 
-            if (result != null) {
+            if (result.next()) {
 
+                found = true;
                 System.out.println("The current tuple is:");
 
                 ResultSetMetaData resultmetadata = result.getMetaData();
@@ -523,13 +526,12 @@ public class EditRequests {
                 }
                 System.out.println();
 
-                while (result.next()) {
-                    System.out.println(result.getInt("customerID") + "\t" + result.getString("name") + 
-                    "\t" + result.getString("phone") + "\t" + result.getString("email") + "\t" + 
-                    result.getDate("dateOfBirth") + "\t" + result.getString("emergencyContactName") +
-                    "\t" + result.getString("emergencyContactPhone") );
-                }
-            } else {
+                System.out.println(result.getInt("customerID") + "\t" + result.getString("name") + 
+                "\t" + result.getString("phone") + "\t" + result.getString("email") + "\t" + 
+                result.getDate("dateOfBirth") + "\t" + result.getString("emergencyContactName") +
+                "\t" + result.getString("emergencyContactPhone") );
+            }
+            if (!found) {
                System.out.println("No member with that ID exists"); 
                 stmt.close();  
                 return;
@@ -781,28 +783,22 @@ public class EditRequests {
             stmt = dbconn.createStatement();
             result = stmt.executeQuery(query);
 
-            if (result != null) {
-                
-                if (result.next()) {
-                    System.out.println("The current membership relationship is:");
-                    System.out.println(result.getInt(1) + "\t" + result.getInt(2) + 
-                    "\t" + result.getInt(3) + "\t" + result.getDate(4) + "\t" + 
-                    result.getDate(5) );
-                    System.out.println();
+            if (result.next()) {
+                System.out.println("The current membership relationship is:");
+                System.out.println(result.getInt(1) + "\t" + result.getInt(2) + 
+                "\t" + result.getInt(3) + "\t" + result.getDate(4) + "\t" + 
+                result.getDate(5) );
+                System.out.println();
 
-                    modifyMemberShip(dbconn, scanner, id);
-                    stmt.close();
-                } else {
-                    System.out.print("This member does not have a membership, do you wish to add one (y/n)?: ");
-                    answer = scanner.next();
-                    if (answer.equals("y")) {
-                        addMembership(dbconn, scanner, id);
-                    }
-                    stmt.close();
-                    return;
-                }
+                modifyMemberShip(dbconn, scanner, id);
+                stmt.close();
             } else {
-                stmt.close();  
+                System.out.print("This member does not have a membership, do you wish to add one (y/n)?: ");
+                answer = scanner.next();
+                if (answer.equals("y")) {
+                    addMembership(dbconn, scanner, id);
+                }
+                stmt.close();
                 return;
             }
             System.out.println();
@@ -1230,26 +1226,887 @@ public class EditRequests {
         
     }
 
+    /*---------------------------------------------------------------------
+    |  Method petLanding
+    |
+    |  Purpose:  this method serves as the landing for an edit pet request
+    |      so that it can call 3 helpers for update, delete, and add.
+    |
+	|  Pre-condition:  User requested to edit member and connection to oracle
+    |      establisted.
+    |
+    |  Post-condition: the users request will be handled and the pet tables will
+    |      be modified.
+    |
+    |  Parameters:
+    |      dbconn -- Our Oracle connection object.
+	|	   scanner -- just a scanner object so we dont create new ones.
+    |
+    |  Returns:  None
+    *-------------------------------------------------------------------*/
     public static void petLanding(Connection dbconn, Scanner scanner) {
+        String answer = null;
 
+		System.out.println("Would you like to update, delete, or add?:");
+		System.out.println("\t(a) Update");
+		System.out.println("\t(b) Delete");
+		System.out.println("\t(c) Add");
+        System.out.println("\tEnter 'q' to go back");
+
+        answer = scanner.next();
+
+        switch (answer) {
+			case "a":
+                petUpdate(dbconn, scanner);
+				break;
+			case "b":
+                petDelete(dbconn, scanner);
+				break;
+			case "c":
+                petAdd(dbconn, scanner);
+				break;
+            case "d":
+                break;
+			case "q":
+				return;
+			default:
+				System.out.println("Invalid response, please try again.");
+                petLanding(dbconn, scanner);
+				return;
+		}
+		return;
     }
+
+    /*---------------------------------------------------------------------
+    |  Method petUpdate
+    |
+    |  Purpose:  handles update pet in the table
+    |
+	|  Pre-condition:  user requested this and oracle connection established
+    |
+    |  Post-condition: request will be handled and tuple(s) in the pet table
+    |      will be modified.
+    |
+    |  Parameters:
+    |      dbconn -- Our Oracle connection object.
+	|	   scanner -- just a scanner object so we dont create new ones.
+    |
+    |  Returns:  None.
+    *-------------------------------------------------------------------*/
+    private static void petUpdate(Connection dbconn, Scanner scanner) {
+        String answer = null;
+
+		System.out.print("Enter the ID or name of the pet you wish to update: ");
+        answer = scanner.next();
+        System.out.println();
+
+        if (answer.matches("\\d+")) {
+            // id case 
+            int id = Integer.parseInt(answer);
+		    Statement stmt = null;
+		    ResultSet result = null;
+            String query = String.format("SELECT * FROM lucashamacher.Pet WHERE petID=%d", id);
+            try {
+
+            stmt = dbconn.createStatement();
+            result = stmt.executeQuery(query);
+            boolean found = false;
+
+            if (result.next()) {
+
+                found = true;
+                System.out.println("The current tuple is:");
+
+                ResultSetMetaData resultmetadata = result.getMetaData();
+
+                for (int i = 1; i <= resultmetadata.getColumnCount(); i++) {
+                    System.out.print(resultmetadata.getColumnName(i) + "\t");
+                }
+                System.out.println();
+
+                System.out.println(result.getInt("petID") + "\t" + result.getString("name") + 
+                "\t" + result.getString("species") + "\t" + result.getString("breed") + "\t" + 
+                result.getString("temperament") + "\t" + result.getString("adoptableFlag") +
+                "\t" + result.getString("ambassadorFlag") + "\t" + result.getString("rescueFlag"));
+            }
+            if (!found) {
+               System.out.println("No pet with that ID exists"); 
+                stmt.close();  
+                return;
+            }
+            System.out.println();
+
+            stmt.close();  
+
+            } catch (SQLException e) {
+
+                System.err.println("*** SQLException:  "
+                    + "Could not fetch query results.");
+                System.err.println("\tMessage:   " + e.getMessage());
+                System.err.println("\tSQLState:  " + e.getSQLState());
+                System.err.println("\tErrorCode: " + e.getErrorCode());
+                System.exit(-1);
+
+            }
+
+            String name = null;
+            String species = null;
+            String breed = null;
+            String temperament = null;
+            String adoptable = null;
+            String ambassador = null;
+            String rescue = null;
+            
+            answer="n";
+            while (answer.contains("n")) {
+
+                System.out.println("Please give new info");
+                System.out.print("Enter name: ");
+                name = scanner.next();
+                System.out.print("Enter species: ");
+                species = scanner.next();
+                System.out.print("Enter breed ");
+                breed = scanner.next();
+                System.out.print("Enter temperament: ");
+                temperament = scanner.next();
+                System.out.print("Is this pet adoptable (y/n)?: ");
+                answer = scanner.next();
+                while (!answer.equals("y") && !answer.equals("n")) {
+                    System.out.println("Please enter y or n!");
+                    answer = scanner.next();
+                }
+                if (answer.equals("y")) {
+                    adoptable = "Yes";
+                } else {
+                    adoptable = "No";
+                }
+                System.out.println();
+                System.out.print("Is this pet an ambassador (y/n)?: ");
+                answer = scanner.next();
+                while (!answer.equals("y") && !answer.equals("n")) {
+                    System.out.println("Please enter y or n!");
+                    answer = scanner.next();
+                }
+                if (answer.equals("y")) {
+                    ambassador = "Yes";
+                } else {
+                    ambassador = "No";
+                }
+                System.out.println();
+                System.out.print("Is this pet a rescue (y/n)?: ");
+                answer = scanner.next();
+                while (!answer.equals("y") && !answer.equals("n")) {
+                    System.out.println("Please enter y or n!");
+                    answer = scanner.next();
+                }
+                if (answer.equals("y")) {
+                    rescue = "Yes";
+                } else {
+                    rescue = "No";
+                }
+                System.out.println();
+
+                System.out.println("Is this correct y or n?");
+                System.out.println(name+", "+species+", "+breed+", "+temperament+", adoptable: "+adoptable+", ambassador: "+ambassador+ ", rescue: " + rescue);
+                answer = scanner.next();
+            }
+
+            // execute sql statement
+            String update = String.format("UPDATE lucashamacher.Pet SET name='%s', species='%s', breed='%s', temperament='%s', adoptableFlag='%s', ambassadorFlag='%s', rescueFlag='%s' WHERE petID=%d", name,species,breed,temperament,adoptable,ambassador,rescue, id);
+            //System.out.println(update);
+            try {
+
+                Statement upStmt = dbconn.createStatement();
+                result = upStmt.executeQuery(update);
+                upStmt.close();
+
+            } catch (SQLException e) {
+
+                System.err.println("*** SQLException:  "
+                    + "Could not fetch query results.");
+                System.err.println("\tMessage:   " + e.getMessage());
+                System.err.println("\tSQLState:  " + e.getSQLState());
+                System.err.println("\tErrorCode: " + e.getErrorCode());
+                System.exit(-1);
+
+            }
+            System.out.println("-----Successfully updated Pet------");
+            System.out.println();
+            return;
+
+        } else {
+            // name case
+		    Statement stmt = null;
+		    ResultSet result = null;
+            String query = "SELECT petID, name FROM lucashamacher.Pet WHERE name LIKE '%"+answer+"%'";
+            ArrayList<Integer> ids = new ArrayList<Integer>();
+            try {
+            stmt = dbconn.createStatement();
+            result = stmt.executeQuery(query);
+
+            if (result != null) {
+
+                System.out.println("Results of name search are:");
+
+                ResultSetMetaData resultmetadata = result.getMetaData();
+
+                for (int i = 1; i <= resultmetadata.getColumnCount(); i++) {
+                    System.out.print(resultmetadata.getColumnName(i) + "\t");
+                }
+                System.out.println();
+
+                while (result.next()) {
+                    ids.add(result.getInt("petID"));
+                    System.out.println(result.getInt("petID") + "\t" + result.getString("name"));
+                }
+            } else {
+               System.out.println("No pet with that name exists"); 
+                stmt.close();  
+                return;
+            }
+            System.out.println();
+
+            stmt.close();  
+
+            } catch (SQLException e) {
+
+                System.err.println("*** SQLException:  "
+                    + "Could not fetch query results.");
+                System.err.println("\tMessage:   " + e.getMessage());
+                System.err.println("\tSQLState:  " + e.getSQLState());
+                System.err.println("\tErrorCode: " + e.getErrorCode());
+                System.exit(-1);
+
+            }
+
+            System.out.print("Please pick an ID# from the list or enter 'q' to go back: ");
+            answer = scanner.next();
+            while (!answer.contains("q")) {
+                if (ids.contains(Integer.parseInt(answer))) {
+                    int id = Integer.parseInt(answer);
+                    
+                    String name = null;
+                    String species = null;
+                    String breed = null;
+                    String temperament = null;
+                    String adoptable = null;
+                    String ambassador = null;
+                    String rescue = null;
+                    
+                    answer="n";
+                    while (answer.contains("n")) {
+
+                        System.out.println("Please give new info");
+                        System.out.print("Enter name: ");
+                        name = scanner.next();
+                        System.out.print("Enter species: ");
+                        species = scanner.next();
+                        System.out.print("Enter breed ");
+                        breed = scanner.next();
+                        System.out.print("Enter temperament: ");
+                        temperament = scanner.next();
+                        System.out.print("Is this pet adoptable (y/n)?: ");
+                        answer = scanner.next();
+                        while (!answer.equals("y") && !answer.equals("n")) {
+                            System.out.println("Please enter y or n!");
+                            answer = scanner.next();
+                        }
+                        if (answer.equals("y")) {
+                            adoptable = "Yes";
+                        } else {
+                            adoptable = "No";
+                        }
+                        System.out.println();
+                        System.out.print("Is this pet an ambassador (y/n)?: ");
+                        answer = scanner.next();
+                        while (!answer.equals("y") && !answer.equals("n")) {
+                            System.out.println("Please enter y or n!");
+                            answer = scanner.next();
+                        }
+                        if (answer.equals("y")) {
+                            ambassador = "Yes";
+                        } else {
+                            ambassador = "No";
+                        }
+                        System.out.println();
+                        System.out.print("Is this pet a rescue (y/n)?: ");
+                        answer = scanner.next();
+                        while (!answer.equals("y") && !answer.equals("n")) {
+                            System.out.println("Please enter y or n!");
+                            answer = scanner.next();
+                        }
+                        if (answer.equals("y")) {
+                            rescue = "Yes";
+                        } else {
+                            rescue = "No";
+                        }
+                        System.out.println();
+
+                        System.out.println("Is this correct y or n?");
+                        System.out.println(name+", "+species+", "+breed+", "+temperament+", adoptable: "+adoptable+", ambassador: "+ambassador+ ", rescue: " + rescue);
+                        answer = scanner.next();
+                    }
+                    String update = String.format("UPDATE lucashamacher.Pet SET name='%s', species='%s', breed='%s', temperament='%s', adoptableFlag='%s', ambassadorFlag='%s', rescueFlag='%s' WHERE petID=%d", name,species,breed,temperament,adoptable,ambassador,rescue, id);
+                    //System.out.println(update);
+                    try {
+
+                        Statement upStmt = dbconn.createStatement();
+                        result = upStmt.executeQuery(update);
+                        upStmt.close();
+
+                    } catch (SQLException e) {
+
+                        System.err.println("*** SQLException:  "
+                            + "Could not fetch query results.");
+                        System.err.println("\tMessage:   " + e.getMessage());
+                        System.err.println("\tSQLState:  " + e.getSQLState());
+                        System.err.println("\tErrorCode: " + e.getErrorCode());
+                        System.exit(-1);
+
+                    }
+                    System.out.println("-----Successfully updated Pet------");
+                    System.out.println();
+                    return;
+                }
+
+                System.out.print("Please pick an ID# from the list or enter 'q' to go back: ");
+                answer = scanner.next();
+            }
+            
+        }
+    }
+
+    /*---------------------------------------------------------------------
+    |  Method petDelete
+    |
+    |  Purpose:  handles deleting a pet in the table
+    |
+	|  Pre-condition:  user requested this and oracle connection established
+    |
+    |  Post-condition: request will be handled and tuple(s) in the pet table
+    |      will be deleted.
+    |
+    |  Parameters:
+    |      dbconn -- Our Oracle connection object.
+	|	   scanner -- just a scanner object so we dont create new ones.
+    |
+    |  Returns:  None.
+    *-------------------------------------------------------------------*/
+    private static void petDelete(Connection dbconn, Scanner scanner) {
+        
+        String answer = null;
+
+		System.out.print("Enter the ID or name of the pet you wish to delete: ");
+        answer = scanner.next();
+        System.out.println();
+
+        if (answer.matches("\\d+")) {
+            // case ID
+            int id = Integer.parseInt(answer);
+		    Statement stmt = null;
+		    ResultSet result = null;
+            String query = String.format("SELECT * FROM lucashamacher.Pet WHERE petID=%d", id);
+            try {
+
+            stmt = dbconn.createStatement();
+            result = stmt.executeQuery(query);
+            boolean found = false;
+
+            while (result.next()) {
+
+                found = true;
+                System.out.println("The current tuple is:");
+
+                ResultSetMetaData resultmetadata = result.getMetaData();
+
+                for (int i = 1; i <= resultmetadata.getColumnCount(); i++) {
+                    System.out.print(resultmetadata.getColumnName(i) + "\t");
+                }
+                System.out.println();
+
+                System.out.println(result.getInt("petID") + "\t" + result.getString("name") + 
+                "\t" + result.getString("species") + "\t" + result.getString("breed") + "\t" + 
+                result.getString("temperament") + "\t" + result.getString("adoptableFlag") +
+                "\t" + result.getString("ambassadorFlag") + "\t" + result.getString("rescueFlag"));
+            } 
+            if (!found) {
+               System.out.println("No pet with that ID exists"); 
+                stmt.close();  
+                return;
+            }
+            System.out.println();
+
+            stmt.close();  
+
+            } catch (SQLException e) {
+
+                System.err.println("*** SQLException:  "
+                    + "Could not fetch query results.");
+                System.err.println("\tMessage:   " + e.getMessage());
+                System.err.println("\tSQLState:  " + e.getSQLState());
+                System.err.println("\tErrorCode: " + e.getErrorCode());
+                System.exit(-1);
+
+            }
+
+            System.out.println("Is this the pet you wish to delete (y/n)?: ");
+            answer = scanner.next();
+
+            if (answer.contains("y")) {
+                if (!petDeleteChecks(dbconn, scanner, id)) {
+                    System.out.println("This pet is unable to be deleted currently");
+                    return;   
+                }
+                String deleteQ = String.format("DELETE FROM lucashamacher.Pet WHERE petID=%d", id);
+                Statement delStmt = null;
+
+                try {
+
+                    delStmt = dbconn.createStatement();
+                    delStmt.executeQuery(deleteQ);
+                    delStmt.close();  
+
+                } catch (SQLException e) {
+
+                    System.err.println("*** SQLException:  "
+                        + "Could not fetch query results.");
+                    System.err.println("\tMessage:   " + e.getMessage());
+                    System.err.println("\tSQLState:  " + e.getSQLState());
+                    System.err.println("\tErrorCode: " + e.getErrorCode());
+                    System.exit(-1);
+                }                
+                System.out.println("-----Successfully deleted Pet-----");
+                System.out.println();
+                return;
+
+            } else {
+                return;
+            }
+        }
+
+        // case names
+        Statement stmt = null;
+        ResultSet result = null;
+        String query = "SELECT petID, name FROM lucashamacher.Pet WHERE name LIKE '%"+answer+"%'";
+        ArrayList<Integer> ids = new ArrayList<Integer>();
+
+        try {
+            stmt = dbconn.createStatement();
+            result = stmt.executeQuery(query);
+
+            if (result != null) {
+
+                System.out.println("Results of name search are:");
+
+                ResultSetMetaData resultmetadata = result.getMetaData();
+
+                for (int i = 1; i <= resultmetadata.getColumnCount(); i++) {
+                    System.out.print(resultmetadata.getColumnName(i) + "\t");
+                }
+                System.out.println();
+
+                while (result.next()) {
+                    ids.add(result.getInt("petID"));
+                    System.out.println(result.getInt("petID") + "\t" + result.getString("name"));
+                }
+            } else {
+               System.out.println("No pet with that name exists"); 
+                stmt.close();  
+                return;
+            }
+            System.out.println();
+
+            stmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        
+        System.out.print("Enter which ID you wish to delete: ");
+        answer = scanner.next();
+        
+         if (!answer.matches("\\d+")) {
+            return;
+        }
+
+        if (ids.contains(Integer.parseInt(answer))) {
+            int id =Integer.parseInt(answer);
+
+            if (!petDeleteChecks(dbconn, scanner, id)) {
+                System.out.println("This pet is unable to be deleted currently");
+                return;
+            }
+            String deleteQ = String.format("DELETE FROM lucashamacher.Pet WHERE petID=%d", id);
+            Statement delStmt = null;
+
+            try {
+
+                delStmt = dbconn.createStatement();
+                delStmt.executeQuery(deleteQ);
+                delStmt.close();  
+
+            } catch (SQLException e) {
+
+                System.err.println("*** SQLException:  "
+                    + "Could not fetch query results.");
+                System.err.println("\tMessage:   " + e.getMessage());
+                System.err.println("\tSQLState:  " + e.getSQLState());
+                System.err.println("\tErrorCode: " + e.getErrorCode());
+                System.exit(-1);
+            }                
+            System.out.println("-----Successfully deleted Pet-----");
+            System.out.println();
+            return;
+        }
+        return;
+    }
+
+    /*---------------------------------------------------------------------
+    |  Method petDeleteChecks
+    |
+    |  Purpose:  checks if pet that is requested to be deleted can be
+    |
+	|  Pre-condition:  user requested this and oracle connection established
+    |
+    |  Post-condition: request will be handled and tuple(s) in the pet table
+    |      will be deleted.
+    |
+    |  Parameters:
+    |      dbconn -- Our Oracle connection object.
+	|	   scanner -- just a scanner object so we dont create new ones.
+    |      id -- the customerID
+    |
+    |  Returns:  None.
+    *-------------------------------------------------------------------*/
+    private static boolean petDeleteChecks(Connection dbconn, Scanner scanner, int id) {
+        
+        // check med records
+        String eventQ = String.format("SELECT recordType, nextDate FROM lucashamacher.HealthRecord WHERE petID=%d", id);
+        Statement eventStmt = null;
+        ResultSet result = null;
+        try {
+
+            eventStmt = dbconn.createStatement();
+            result = eventStmt.executeQuery(eventQ);
+
+            while (result.next()) {
+                if (result.getString(1).contains("eath")) {
+                    eventStmt.close();
+                    return true;
+                }
+                if (result.getString(1).contains("accination") || result.getString(1).contains("heckup")) {
+                    if (result.getDate(2).toLocalDate().compareTo(LocalDate.now()) <= 0 ) {
+                        eventStmt.close();
+                        return false;
+                    } 
+                }
+            }
+
+            eventStmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+        }
+        
+        // check adopted
+        eventQ = String.format("SELECT status FROM lucashamacher.AdoptionApplication WHERE petID=%d", id);
+        eventStmt = null;
+        result = null;
+        try {
+
+            eventStmt = dbconn.createStatement();
+            result = eventStmt.executeQuery(eventQ);
+
+            while (result.next()) {
+                if (result.getString(1).contains("pproved")) {
+                   eventStmt.close();
+                   return true; 
+                }
+            }
+
+            eventStmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+        }
+
+
+        return false;
+    }
+
+    /*---------------------------------------------------------------------
+    |  Method petAdd
+    |
+    |  Purpose:  handles adding a pet in the table
+    |
+	|  Pre-condition:  user requested this and oracle connection established
+    |
+    |  Post-condition: request will be handled and tuple(s) in the pet table
+    |      will be added.
+    |
+    |  Parameters:
+    |      dbconn -- Our Oracle connection object.
+	|	   scanner -- just a scanner object so we dont create new ones.
+    |
+    |  Returns:  None.
+    *-------------------------------------------------------------------*/
+    private static void petAdd(Connection dbconn, Scanner scanner) {
+
+        // need to get a valid id
+        int id;
+        int idMin = 0;
+        int idMax = 0;
+        Statement stmt = null;
+        ResultSet result = null;
+        String query = String.format("SELECT min(petID), max(petID) FROM lucashamacher.Pet");
+        try {
+
+        stmt = dbconn.createStatement();
+        result = stmt.executeQuery(query);
+
+        if (result != null) {
+
+            while (result.next()) {
+                idMin = result.getInt(1);
+                idMax = result.getInt(2);
+            }
+        } else {
+            idMin = 0;
+            idMax = 0;
+            stmt.close();  
+        }
+        System.out.println();
+
+        stmt.close();  
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        if (idMin > 0) {
+            id = idMin -1;
+        } else {
+            id = idMax + 1;
+        }
+
+        String name = null;
+        String species = null;
+        String breed = null;
+        String temperament = null;
+        String adoptable = null;
+        String ambassador = null;
+        String rescue = null;
+        
+        String answer="n";
+        while (answer.contains("n")) {
+
+            System.out.println("Please give new info");
+            System.out.print("Enter name: ");
+            name = scanner.next();
+            System.out.print("Enter species: ");
+            species = scanner.next();
+            System.out.print("Enter breed ");
+            breed = scanner.next();
+            System.out.print("Enter temperament: ");
+            temperament = scanner.next();
+            System.out.print("Is this pet adoptable (y/n)?: ");
+            answer = scanner.next();
+            while (!answer.equals("y") && !answer.equals("n")) {
+                System.out.println("Please enter y or n!");
+                answer = scanner.next();
+            }
+            if (answer.equals("y")) {
+                adoptable = "Yes";
+            } else {
+                adoptable = "No";
+            }
+            System.out.println();
+            System.out.print("Is this pet an ambassador (y/n)?: ");
+            answer = scanner.next();
+            while (!answer.equals("y") && !answer.equals("n")) {
+                System.out.println("Please enter y or n!");
+                answer = scanner.next();
+            }
+            if (answer.equals("y")) {
+                ambassador = "Yes";
+            } else {
+                ambassador = "No";
+            }
+            System.out.println();
+            System.out.print("Is this pet a rescue (y/n)?: ");
+            answer = scanner.next();
+            while (!answer.equals("y") && !answer.equals("n")) {
+                System.out.println("Please enter y or n!");
+                answer = scanner.next();
+            }
+            if (answer.equals("y")) {
+                rescue = "Yes";
+            } else {
+                rescue = "No";
+            }
+            System.out.println();
+
+            System.out.println("Is this correct y or n?");
+            System.out.println(name+", "+species+", "+breed+", "+temperament+", adoptable: "+adoptable+", ambassador: "+ambassador+ ", rescue: " + rescue);
+            answer = scanner.next();
+        }
     
+        String add = String.format("INSERT INTO lucashamacher.Pet VALUES ('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s')", id, name, species, breed, temperament, adoptable, ambassador, rescue);
+
+        try {
+
+            Statement addStmt = dbconn.createStatement();
+            addStmt.executeQuery(add);
+            addStmt.close();
+
+        } catch (SQLException e) {
+
+            System.err.println("*** SQLException:  "
+                + "Could not fetch query results.");
+            System.err.println("\tMessage:   " + e.getMessage());
+            System.err.println("\tSQLState:  " + e.getSQLState());
+            System.err.println("\tErrorCode: " + e.getErrorCode());
+            System.exit(-1);
+
+        }
+        System.out.println("-----Successfully added pet------");
+        System.out.println();
+        return;
+    }
+
+    
+    
+    /*---------------------------------------------------------------------
+    |  Method orderLanding
+    |
+    |  Purpose:  this method serves as the landing for an edit order request
+    |      so that it can call 3 helpers for update, delete, and add.
+    |
+	|  Pre-condition:  User requested to edit order and connection to oracle
+    |      establisted.
+    |
+    |  Post-condition: the users request will be handled and the order table will
+    |      be modified.
+    |
+    |  Parameters:
+    |      dbconn -- Our Oracle connection object.
+	|	   scanner -- just a scanner object so we dont create new ones.
+    |
+    |  Returns:  None
+    *-------------------------------------------------------------------*/
     public static void orderLanding(Connection dbconn, Scanner scanner) {
 
     }
 
+    /*---------------------------------------------------------------------
+    |  Method orderLanding
+    |
+    |  Purpose:  this method serves as the landing for an edit reservation request
+    |      so that it can call 3 helpers for update, delete, and add.
+    |
+	|  Pre-condition:  User requested to edit member and connection to oracle
+    |      establisted.
+    |
+    |  Post-condition: the users request will be handled and the reservation table will
+    |      be modified.
+    |
+    |  Parameters:
+    |      dbconn -- Our Oracle connection object.
+	|	   scanner -- just a scanner object so we dont create new ones.
+    |
+    |  Returns:  None
+    *-------------------------------------------------------------------*/
     public static void reservationLanding(Connection dbconn, Scanner scanner) {
 
     }
 
+    /*---------------------------------------------------------------------
+    |  Method healthLanding
+    |
+    |  Purpose:  this method serves as the landing for an edit health record request
+    |      so that it can call 3 helpers for update, delete, and add.
+    |
+	|  Pre-condition:  User requested to edit member and connection to oracle
+    |      establisted.
+    |
+    |  Post-condition: the users request will be handled and the health record table will
+    |      be modified.
+    |
+    |  Parameters:
+    |      dbconn -- Our Oracle connection object.
+	|	   scanner -- just a scanner object so we dont create new ones.
+    |
+    |  Returns:  None
+    *-------------------------------------------------------------------*/
     public static void healthLanding(Connection dbconn, Scanner scanner) {
 
     }
 
+    /*---------------------------------------------------------------------
+    |  Method adoptionLanding
+    |
+    |  Purpose:  this method serves as the landing for an edit adoption request
+    |      so that it can call 3 helpers for update, delete, and add.
+    |
+	|  Pre-condition:  User requested to edit member and connection to oracle
+    |      establisted.
+    |
+    |  Post-condition: the users request will be handled and the adoption table will
+    |      be modified.
+    |
+    |  Parameters:
+    |      dbconn -- Our Oracle connection object.
+	|	   scanner -- just a scanner object so we dont create new ones.
+    |
+    |  Returns:  None
+    *-------------------------------------------------------------------*/
     public static void adoptionLanding(Connection dbconn, Scanner scanner) {
 
     }
 
+    /*---------------------------------------------------------------------
+    |  Method eventLanding
+    |
+    |  Purpose:  this method serves as the landing for an edit event request
+    |      so that it can call 3 helpers for update, delete, and add.
+    |
+	|  Pre-condition:  User requested to edit member and connection to oracle
+    |      establisted.
+    |
+    |  Post-condition: the users request will be handled and the event tables will
+    |      be modified.
+    |
+    |  Parameters:
+    |      dbconn -- Our Oracle connection object.
+	|	   scanner -- just a scanner object so we dont create new ones.
+    |
+    |  Returns:  None
+    *-------------------------------------------------------------------*/
     public static void eventLanding(Connection dbconn, Scanner scanner) {
 
     }
